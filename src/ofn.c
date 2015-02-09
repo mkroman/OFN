@@ -218,32 +218,58 @@ int ofn_search(const char* filename)
     return return_code;
 }
 
+void print_usage(const char* prog)
+{
+    printf("Usage: %s [-h] [commit <file>|search]\n\n", prog);
+    puts("ofn " OFN_VERSION " (c) Mikkel Kroman\n");
+    puts("Options:");
+    puts("  -h, --help     Display this message\n");
+}
+
+static struct option command_line_options[] = {
+    { "help",    no_argument, 0, 'h' },
+    { "version", no_argument, 0, 'v' },
+    { 0,         0,           0, 0 }
+};
+
 int main(int argc, char** argv)
 {
-    int o;
+    int option;
     int option_index;
-    static struct option long_options[] = {
-        /* Use flags like so:
-        {"verbose",	no_argument,	&verbose_flag, 'V'}*/
-        /* Argument styles: no_argument, required_argument, optional_argument */
-        {"help", no_argument, 0, 'h'},
-        {"version", no_argument, 0, 'v'},
-        {0, 0, 0, 0}};
 
-#define VERSION "0.1"
-
-    while ((o = getopt_long(argc, argv, "h", long_options, &option_index)) != -1)
+    if (argc < 2)
     {
-        if (o == 'h')
-        {
-            printf("Usage: %s [-h]\n\n", argv[0]);
-            puts("ofn " VERSION " (c) Mikkel Kroman\n");
-            puts("Options:");
-            puts("  -h, --help     Display this message\n");
+        print_usage(argv[0]);
 
-            return EXIT_SUCCESS;
+        return EXIT_SUCCESS;
+    }
+
+    while ((option = getopt_long(argc, argv, "hv", command_line_options,
+                                 &option_index)) != -1)
+    {
+        switch (option)
+        {
+            case 'h':
+                print_usage(argv[0]);
+                return EXIT_SUCCESS;
+
+                break;
+            case 'v':
+                break;
+
+            default:
+            {
+            }
         }
     }
-    
+
+    if (option_index < argc)
+    {
+        while (option_index < argc)
+        {
+            printf("Action: %s\n", argv[option_index++]);
+        }
+    }
+
     return 0;
 }
