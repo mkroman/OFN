@@ -33,12 +33,6 @@ static PuzzleCvec ofn_puzzle_cvec;
 
 static const int SIGNATURE_SIZE = 544;
 
-// Initialize the ofn database and puzzle context.
-int ofn_init();
-
-// Deinitialize the database and puzzle context.
-int ofn_close();
-
 // Commit a new image file to the database.
 int ofn_commit(const char* filename);
 

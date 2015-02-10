@@ -61,7 +61,7 @@ int ofn_close()
 
 void ofn_get_signature(PuzzleCvec* cvec, char* buffer)
 {
-    int i;
+    size_t i;
 
     assert(cvec->sizeof_vec <= 544);
 
@@ -235,7 +235,7 @@ static struct option command_line_options[] = {
 int main(int argc, char** argv)
 {
     int option;
-    int option_index;
+    int option_index = 0;
 
     if (argc < 2)
     {
@@ -263,11 +263,29 @@ int main(int argc, char** argv)
         }
     }
 
-    if (option_index < argc)
+    const char* filename = NULL;
+    const char* cmd;
+
+    if (optind < argc)
     {
-        while (option_index < argc)
+        cmd = argv[optind++];
+        ofn_init();
+
+        if (!strcmp(cmd, "commit"))
         {
-            printf("Action: %s\n", argv[option_index++]);
+            if (optind == argc)
+            {
+                printf("Missing file argument\n");
+
+                return EXIT_FAILURE;
+            }
+
+            filename = argv[optind++];
+            printf("Committing file %s.\n", filename);
+            ofn_commit(filename);
+        }
+        else if (!strcmp(cmd, "search"))
+        {
         }
     }
 
