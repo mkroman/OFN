@@ -31,7 +31,6 @@ set (OFN_DESCRIPTION "Image recognition tool to determine if an image has been s
 # Set source files
 set (ofn_SOURCE
   src/ofn.c
-  src/database.c
 )
 
 include_directories (src)

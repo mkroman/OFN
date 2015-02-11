@@ -28,19 +28,26 @@
 
 #define OFN_VERSION "v0.1"
 
-static PuzzleContext ofn_puzzle_context;
-static PuzzleCvec ofn_puzzle_cvec;
+struct ofn_ctx_ {
+    PuzzleContext* puzzle;
+    sqlite3* db;
+};
+
+typedef struct ofn_ctx_ ofn_ctx;
 
 static const int SIGNATURE_SIZE = 544;
 
+// Initialize a context.
+int ofn_init(ofn_ctx* ctx);
+
 // Commit a new image file to the database.
-int ofn_commit(const char* filename);
+int ofn_commit(ofn_ctx* ctx, const char* filename);
 
 // Search for an image.
 // Returns 1 if the image was found, 0 otherwise.
-int ofn_search(const char* filename);
+int ofn_search(ofn_ctx* ctx, const char* filename);
 
 // Get a fingerprint of a vector.
-void ofn_fingerprint(PuzzleCvec* cvec, char* buffer);
+void ofn_fingerprint(ofn_ctx* ctx, PuzzleCvec* cvec, char* buffer);
 
 #endif
