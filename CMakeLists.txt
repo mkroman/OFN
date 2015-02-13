@@ -22,6 +22,9 @@ cmake_minimum_required (VERSION 2.6)
 # Set CMake modules search path
 set (CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake")
 
+# Set the compiler standards flag
+set (CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} "${CMAKE_CXX_FLAGS} -std=c++14")
+
 find_package (LibPuzzle REQUIRED)
 
 # Set project variables
@@ -30,7 +33,9 @@ set (OFN_DESCRIPTION "Image recognition tool to determine if an image has been s
 
 # Set source files
 set (ofn_SOURCE
-  src/ofn.c
+  src/OFN/main.cpp
+  src/OFN/Context.cpp
+  src/OFN/Image.cpp
 )
 
 include_directories (src)
