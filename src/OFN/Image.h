@@ -19,16 +19,53 @@
 
 #include <string>
 
-struct PuzzleCvec_;
-typedef PuzzleCvec_ PuzzleCvec;
+extern "C" {
+# include <puzzle.h>
+}
+
+// struct PuzzleCvec_;
+// typedef PuzzleCvec_ PuzzleCvec;
+// typedef struct PuzzleCompressedCvec_ PuzzleCompressedCvec;
 
 namespace OFN
 {
 
 class Context;
 
+/**
+ * Image class.
+ */
 class Image
 {
+public:
+    class CompressedWordIterator
+        : public std::iterator<std::input_iterator_tag, class T>
+    {
+        PuzzleCvec* cvec_;
+        PuzzleContext* ctx_;
+        PuzzleCompressedCvec* cvec_compressed_;
+    public:
+        CompressedWordIterator(PuzzleContext* ctx, PuzzleCvec* cvec)
+            : cvec_(cvec), ctx_(ctx)
+        {
+            cvec_compressed_ = new PuzzleCompressedCvec;
+            puzzle_init_compressed_cvec(ctx, cvec_compressed_);
+        }
+
+        CompressedWordIterator(const CompressedWordIterator& lvalue) :
+            cvec_(lvalue.cvec_),
+            ctx_(lvalue.ctx_),
+            cvec_compressed_(lvalue.cvec_compressed_)
+        {
+        }
+
+        ~CompressedWordIterator()
+        {
+            puzzle_free_compressed_cvec(ctx_, cvec_compressed_);
+            delete cvec_compressed_;
+        }
+    };
+
 public:
     /**
      * Constructor.
@@ -55,7 +92,7 @@ public:
      *
      * @returns the filename.
      */
-    const std::string& GetFilename() const { return filename_; }
+    const std::string& GetFileName() const { return file_name_; }
 
     /**
      * Get the Cvec.
@@ -67,7 +104,7 @@ public:
 private:
     int error_;
     const Context* context_;
-    std::string filename_;
+    std::string file_name_;
     PuzzleCvec* cvec_;
 };
 

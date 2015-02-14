@@ -15,13 +15,14 @@
  * License along with this library.
  */
 
+#include <cstdio>
 #include <cstddef>
-#include <iostream>
+
 #include "OFN/Image.h"
 #include "OFN/Context.h"
 
 extern "C" {
-#include <puzzle.h>
+# include <puzzle.h>
 }
 
 using namespace OFN;
@@ -35,14 +36,13 @@ Context::Context()
 Context::~Context()
 {
     puzzle_free_context(puzzle_);
-    
     delete puzzle_;
 }
 
 void Context::Search(Image* image)
 {
-    std::cout << "Searching for images similar to " << image->GetFilename()
-              << std::endl;
+    printf("Searching for images similar to %s\n",
+           image->GetFileName().c_str());
 }
 
 void Context::Commit(Image* image)

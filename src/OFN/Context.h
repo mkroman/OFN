@@ -27,17 +27,42 @@ typedef PuzzleContext_ PuzzleContext;
 namespace OFN
 {
 
+/*
+ * Forward declarations.
+ */
 class Image;
 
+/**
+ * OFN Context.
+ */
 class Context
 {
 public:
+    /**
+     * Constructor.
+     */
     Context();
+
+    /**
+     * Destructor.
+     */
     ~Context();
 
+public:
+    /**
+     * Commit a new image and its fingerprint to the database.
+     */
     void Commit(Image* image);
+
+    /**
+     * Search for similar images in the database.
+     */
     void Search(Image* image);
 
+public:
+    /**
+     * Getters.
+     */
     PuzzleContext* GetPuzzleContext() const { return puzzle_; }
 
 private:

@@ -16,20 +16,21 @@
  */
 
 #include <cstddef>
+
 #include "OFN/Image.h"
 #include "OFN/Context.h"
 
 extern "C" {
-#include <puzzle.h>
+# include <puzzle.h>
 }
 
 using namespace OFN;
 
 Image::Image(const Context* context, const std::string& filename)
-    : error_(0), context_(context), filename_(filename)
+    : error_(0), context_(context), file_name_(filename)
 {
-    cvec_ = new PuzzleCvec;
     PuzzleContext* ctx = context->GetPuzzleContext();
+    cvec_ = new PuzzleCvec;
 
     // Initialize and load the image as a cvec.
     puzzle_init_cvec(ctx, cvec_);
@@ -41,6 +42,5 @@ Image::Image(const Context* context, const std::string& filename)
 Image::~Image()
 {
     puzzle_free_cvec(context_->GetPuzzleContext(), cvec_);
-
     delete cvec_;
 }

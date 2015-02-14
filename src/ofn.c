@@ -30,9 +30,9 @@
 
 #include "ofn.h"
 
-
 void print_trace(void* a, const char* b)
 {
+    (void)a;
     fprintf(stderr, "SQL QUERY: %s\n", b);
 }
 
@@ -215,7 +215,7 @@ int ofn_commit(ofn_ctx* ctx, const char* filename)
     {
          sqlite3_reset(stmt);
 
-         assert(i < cvec.sizeof_vec);
+         assert((size_t)i < cvec.sizeof_vec);
          memcpy(buf, cvec.vec + i, MAX_WORD_LENGTH);
 
          // Compress the word.
@@ -294,7 +294,7 @@ int ofn_search(ofn_ctx* ctx, const char* filename)
         {
              sqlite3_reset(stmt);
 
-             assert(i < cvec.sizeof_vec);
+             assert((size_t)i < cvec.sizeof_vec);
              memcpy(buf, cvec.vec + i, MAX_WORD_LENGTH);
 
              // Compress the word.
@@ -403,7 +403,7 @@ int main(int argc, char** argv)
     {
         cmd = argv[optind++];
 
-        ctx = malloc(sizeof(ofn_ctx));
+        ctx = (ofn_ctx*)malloc(sizeof(ofn_ctx));
         ofn_init(ctx);
 
         if (!strcmp(cmd, "commit"))
