@@ -18,22 +18,21 @@
 #pragma once
 
 #include <string>
+#include <memory>
 
-extern "C" {
-struct PuzzleContext_;
-typedef PuzzleContext_ PuzzleContext;
-}
+#include <sqlite3.h>
+
+typedef struct PuzzleContext_ PuzzleContext;
 
 namespace OFN
 {
 
-/*
- * Forward declarations.
- */
+/* Forward declarations. */
 class Image;
+class Database;
 
 /**
- * OFN Context.
+ * %Context class.
  */
 class Context
 {
@@ -59,14 +58,33 @@ public:
      */
     void Search(Image* image);
 
-public:
     /**
-     * Getters.
+     * @brief Save the image to the database.
+     *
+     * @returns The inserted row ID on success, -1 otherwise.
      */
+    sqlite3_int64 SaveImage(const Image& image);
+
+    /**
+     * @brief Save the image signature to the database.
+     *
+     * @returns The inserted row ID on success, -1 otherwise.
+     */
+    sqlite3_int64 SaveImageSignature(const Image& image, sqlite3_int64 image_id);
+
+    /**
+     * @brief Save the image words compressed to the database.
+     */
+    bool SaveImageWords(const Image& image, sqlite3_int64 image_id,
+                        sqlite3_int64 signature_id);
+
+public:
+    /** Getters */
     PuzzleContext* GetPuzzleContext() const { return puzzle_; }
 
 private:
     int error_;
+    std::shared_ptr<Database> db_;
     PuzzleContext* puzzle_;
 };
 

@@ -18,14 +18,11 @@
 #pragma once
 
 #include <string>
+#include <vector>
 
 extern "C" {
 # include <puzzle.h>
 }
-
-// struct PuzzleCvec_;
-// typedef PuzzleCvec_ PuzzleCvec;
-// typedef struct PuzzleCompressedCvec_ PuzzleCompressedCvec;
 
 namespace OFN
 {
@@ -38,33 +35,18 @@ class Context;
 class Image
 {
 public:
-    class CompressedWordIterator
-        : public std::iterator<std::input_iterator_tag, class T>
-    {
-        PuzzleCvec* cvec_;
-        PuzzleContext* ctx_;
-        PuzzleCompressedCvec* cvec_compressed_;
-    public:
-        CompressedWordIterator(PuzzleContext* ctx, PuzzleCvec* cvec)
-            : cvec_(cvec), ctx_(ctx)
-        {
-            cvec_compressed_ = new PuzzleCompressedCvec;
-            puzzle_init_compressed_cvec(ctx, cvec_compressed_);
-        }
+    static const int MAX_WORDS = 100;
+    static const int MAX_WORD_LENGTH = 10;
 
-        CompressedWordIterator(const CompressedWordIterator& lvalue) :
-            cvec_(lvalue.cvec_),
-            ctx_(lvalue.ctx_),
-            cvec_compressed_(lvalue.cvec_compressed_)
-        {
-        }
+    typedef struct {
+        const char* word;
+        size_t size;
+    } Word;
 
-        ~CompressedWordIterator()
-        {
-            puzzle_free_compressed_cvec(ctx_, cvec_compressed_);
-            delete cvec_compressed_;
-        }
-    };
+    typedef struct {
+        char word[11];
+        size_t size;
+    } CompressedWord;
 
 public:
     /**
@@ -86,6 +68,9 @@ public:
      * @returns The error field. Non-zero means there was an error.
      */
     int GetError() { return error_; }
+
+    std::vector<Word> GetWords() const;
+    std::vector<CompressedWord> GetCompressedWords() const;
 
     /**
      * Get the filename.
