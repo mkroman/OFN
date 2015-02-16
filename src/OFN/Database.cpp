@@ -17,29 +17,39 @@
 
 #include <sqlite3.h>
 
+#include "spdlog/spdlog.h"
 #include "OFN/Database.h"
 #include "OFN/Image.h"
 
 using namespace OFN;
+
+auto console = spdlog::stdout_logger_mt("console");
+
+void Database::print_sqlite_trace(void* argument, const char* sql)
+{
+    const Database* db = reinterpret_cast<Database*>(argument);
+
+    console->info("({}) SQL: {}", db->GetPath(), sql);
+}
 
 Database::Database(const std::string& path) :
     db_path_(path)
 {
     if (sqlite3_open(path.c_str(), &db_) != SQLITE_OK)
     {
-        fprintf(stderr, "Failed to open sqlite3 database: %s\n",
-                sqlite3_errmsg(db_));
+        console->error("Failed to open sqlite3 database: {}",
+                       sqlite3_errmsg(db_));
     }
 
-    sqlite3_trace(db_, print_trace, NULL);
+    sqlite3_trace(db_, print_sqlite_trace, this);
 }
 
 Database::~Database()
 {
     if (sqlite3_close(db_) != SQLITE_OK)
     {
-        fprintf(stderr, "Failed to close sqlite3 database: %s\n",
-                sqlite3_errmsg(db_));
+        console->error("Failed to close sqlite3 database: {}",
+                       sqlite3_errmsg(db_));
     }
 }
 
@@ -72,4 +82,4 @@ bool Database::Execute(const std::string& sql) const
 {
     return (sqlite3_exec(db_, sql.c_str(), NULL, NULL, NULL) == SQLITE_OK);
 }
-                                              
+

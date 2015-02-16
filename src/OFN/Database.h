@@ -20,6 +20,8 @@
 #include <string>
 #include <sqlite3.h>
 
+#include "spdlog/spdlog.h"
+
 /**
  * Forward declarations.
  */
@@ -40,11 +42,7 @@ public:
     /** Destructor. */
     ~Database();
 
-    static void print_trace(void* a, const char* zSql)
-    {
-        (void)a;
-        fprintf(stderr, "SQL QUERY: %s\n", zSql);
-    }
+    static void print_sqlite_trace(void* db, const char* zSql);
 
     /** Get the database path. */
     const std::string& GetPath() const;

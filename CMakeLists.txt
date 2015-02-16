@@ -27,6 +27,8 @@ set (CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} "${CMAKE_CXX_FLAGS} -std=c++14")
 
 find_package (LibPuzzle REQUIRED)
 
+set (CMAKE_CXX_FLAGS_DEBUG "-DSPDLOG_DEBUG_ON")
+
 # Set project variables
 set (OFN_URL "https://github.com/mkroman/ofn")
 set (OFN_DESCRIPTION "Image recognition tool to determine if an image has been seen before.")
@@ -39,7 +41,8 @@ set (ofn_SOURCE
   src/OFN/Image.cpp
 )
 
-include_directories (src)
+include_directories (${CMAKE_CURRENT_SOURCE_DIR}/src)
+include_directories (${CMAKE_CURRENT_SOURCE_DIR}/src/spdlog/include)
 
 add_executable (ofn ${ofn_SOURCE})
 target_link_libraries (ofn ${LIBPUZZLE_LIBRARY} sqlite3)
