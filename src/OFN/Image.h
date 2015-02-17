@@ -38,16 +38,6 @@ public:
     static const int MAX_WORDS = 100;
     static const int MAX_WORD_LENGTH = 10;
 
-    typedef struct {
-        const char* word;
-        size_t size;
-    } Word;
-
-    typedef struct {
-        char word[11];
-        size_t size;
-    } CompressedWord;
-
 public:
     /**
      * Constructor.
@@ -62,15 +52,10 @@ public:
      */
     ~Image();
 
-    /*
-     * Get the error field. 
-     * 
-     * @returns The error field. Non-zero means there was an error.
+    /**
+     * Get a list of words from the signature.
      */
-    int GetError() { return error_; }
-
-    std::vector<Word> GetWords() const;
-    std::vector<CompressedWord> GetCompressedWords() const;
+    std::vector<std::string> GetWords() const;
 
     /**
      * Get the filename.
@@ -87,7 +72,6 @@ public:
     const PuzzleCvec* GetCvec() const { return cvec_; }
 
 private:
-    int error_;
     const Context* context_;
     std::string file_name_;
     PuzzleCvec* cvec_;

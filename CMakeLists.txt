@@ -23,11 +23,11 @@ cmake_minimum_required (VERSION 2.6)
 set (CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake")
 
 # Set the compiler standards flag
-set (CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} "${CMAKE_CXX_FLAGS} -std=c++14")
+set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14 -pthread")
 
 find_package (LibPuzzle REQUIRED)
 
-set (CMAKE_CXX_FLAGS_DEBUG "-DSPDLOG_DEBUG_ON")
+set (CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -DSPDLOG_DEBUG_ON")
 
 # Set project variables
 set (OFN_URL "https://github.com/mkroman/ofn")

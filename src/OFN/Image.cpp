@@ -19,6 +19,7 @@
 #include <cassert>
 #include <cstring>
 
+#include "OFN/Puzzle.h"
 #include "OFN/Image.h"
 #include "OFN/Context.h"
 
@@ -29,16 +30,17 @@ extern "C" {
 using namespace OFN;
 
 Image::Image(const Context* context, const std::string& filename)
-    : error_(0), context_(context), file_name_(filename)
+    : context_(context),
+    file_name_(filename)
 {
-    PuzzleContext* ctx = context->GetPuzzleContext();
+    auto ctx = context->GetPuzzleContext();
     cvec_ = new PuzzleCvec;
 
     // Initialize and load the image as a cvec.
     puzzle_init_cvec(ctx, cvec_);
 
     if (puzzle_fill_cvec_from_file(ctx, cvec_, filename.c_str()) != 0)
-        error_ = 1;
+        throw PuzzleException("Could not fill cvec from file");
 }
 
 Image::~Image()
@@ -47,61 +49,20 @@ Image::~Image()
     delete cvec_;
 }
 
-std::vector<Image::Word> Image::GetWords() const
+std::vector<std::string> Image::GetWords() const
 {
-    std::vector<Image::Word> words;
+    std::vector<std::string> words;
     words.reserve(MAX_WORDS);
-
-    for (int i = 0; i < MAX_WORDS; i++)
-    {
-        assert(cvec_->sizeof_vec > static_cast<size_t>(100 + i));
-
-        Word w = {
-            .word = reinterpret_cast<char*>(&cvec_->vec[i]), 
-            .size = MAX_WORD_LENGTH
-        };
-
-        words.push_back(w);
-    }
-
-    return words;
-}
-
-std::vector<Image::CompressedWord> Image::GetCompressedWords() const
-{
-    PuzzleCvec cvec;
-    PuzzleContext* puzzle_ctx = context_->GetPuzzleContext();
-    PuzzleCompressedCvec cvec_compressed;
-    std::vector<Image::CompressedWord> words;
-    CompressedWord w = {{0}, 0};
 
     assert(cvec_->sizeof_vec >
            static_cast<size_t>(MAX_WORDS + MAX_WORD_LENGTH));
 
-    words.reserve(MAX_WORDS);
-    puzzle_init_cvec(puzzle_ctx, &cvec);
-    puzzle_init_compressed_cvec(puzzle_ctx, &cvec_compressed);
-
     for (int i = 0; i < MAX_WORDS; i++)
     {
-        cvec.vec = &cvec_->vec[i];
-        cvec.sizeof_vec = MAX_WORD_LENGTH;
-
-        // Compress the cvec
-        puzzle_compress_cvec(puzzle_ctx, &cvec_compressed, &cvec);
-
-        // Copy the compressed cvec to our word
-        memcpy(&w.word, cvec_compressed.vec,
-               cvec_compressed.sizeof_compressed_vec);
-
-        w.size = cvec_compressed.sizeof_compressed_vec;
-
-        // Add the word
-        words.push_back(w);
-
-        // Clear up allocated resources
-        puzzle_free_compressed_cvec(puzzle_ctx, &cvec_compressed);
+        words.push_back(std::string(reinterpret_cast<char*>(&cvec_->vec[i]),
+                                    MAX_WORD_LENGTH));
     }
 
     return words;
 }
+

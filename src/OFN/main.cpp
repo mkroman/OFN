@@ -22,6 +22,9 @@
 #include <cstring>
 
 #include "OFN/OFN.h"
+#include "OFN/Image.h"
+#include "OFN/Context.h"
+#include "OFN/Puzzle.h"
 
 void cmd_commit(const char* filename, OFN::Context* c);
 void cmd_search(const char* filename, OFN::Context* c);
@@ -45,34 +48,29 @@ static struct command command_line_commands[] = {
 
 void cmd_commit(const char* filename, OFN::Context* c)
 {
-    auto image = new OFN::Image(c, filename);
-
-    if (image->GetError() != 0)
+    try
     {
-        fprintf(stderr, "Failed to initialize Image\n");
-
-        return;
+        OFN::Image* image = new OFN::Image(c, filename);
+        c->Commit(image);
     }
-
-    c->Commit(image);
-
-    delete image;
+    catch (const OFN::PuzzleException& exception)
+    {
+        fprintf(stderr, "libpuzzle exception thrown: %s\n", exception.what());
+    }
 }
 
 void cmd_search(const char* filename, OFN::Context* c)
 {
-    auto image = new OFN::Image(c, filename);
-
-    if (image->GetError() != 0)
+    try
     {
-        fprintf(stderr, "Failed to initialize Image\n");
-
-        return;
+        auto image = new OFN::Image(c, filename);
+        c->Search(image);
+        delete image;
     }
-
-    c->Search(image);
-
-    delete image;
+    catch (const OFN::PuzzleException& exception)
+    {
+        fprintf(stderr, "libpuzzle exception thrown: %s\n", exception.what());
+    }
 }
 
 void print_usage(const char* executable)

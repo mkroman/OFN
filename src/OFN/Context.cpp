@@ -55,15 +55,15 @@ void Context::Commit(Image* image)
     sqlite3_int64 image_id, signature_id;
     auto console = spdlog::stdout_logger_mt("console");
 
-    console->debug("Comitting image {}\n", image->GetFileName());
+    console->debug("Comitting image {}", image->GetFileName());
 
-    if ((image_id = SaveImage(*image)) == -1)
+    if ((image_id = SaveImage(image)) == -1)
     {
         console->error("SaveImage returned -1");
         return;
     }
 
-    if ((signature_id = SaveImageSignature(*image, image_id)) == -1)
+    if ((signature_id = SaveImageSignature(image, image_id)) == -1)
     {
         console->error("SaveImageSignature returned -1");
         return;
@@ -72,7 +72,7 @@ void Context::Commit(Image* image)
     if (!db_->Execute("BEGIN TRANSACTION"))
         return;
 
-    if (!SaveImageWords(*image, image_id, signature_id))
+    if (!SaveImageWords(image, image_id, signature_id))
     {
         console->error("SaveImageWords failed");
     }
@@ -80,17 +80,17 @@ void Context::Commit(Image* image)
     db_->Execute("END TRANSACTION");
 }
 
-sqlite3_int64 Context::SaveImage(const Image& image)
+sqlite3_int64 Context::SaveImage(const Image* image)
 {
     auto console = spdlog::get("console");
-    sqlite3_stmt* stmt = db_->PrepareStatement(
+    auto stmt = db_->PrepareStatement(
         "INSERT INTO images (filename, digest) VALUES (?, ?)");
 
     if (stmt == nullptr)
         return -1;
 
-    sqlite3_bind_text(stmt, 1, image.GetFileName().c_str(),
-                      image.GetFileName().size(), NULL);
+    sqlite3_bind_text(stmt, 1, image->GetFileName().c_str(),
+                      image->GetFileName().size(), NULL);
     sqlite3_bind_text(stmt, 2, "111", 4, NULL);
 
     if (sqlite3_step(stmt) != SQLITE_DONE)
@@ -107,17 +107,17 @@ sqlite3_int64 Context::SaveImage(const Image& image)
     return db_->GetLastRowID();
 }
 
-sqlite3_int64 Context::SaveImageSignature(const Image& image, sqlite3_int64 image_id)
+sqlite3_int64 Context::SaveImageSignature(const Image* image, sqlite3_int64 image_id)
 {
     auto console = spdlog::get("console");
-    sqlite3_stmt* stmt = db_->PrepareStatement(
+    auto stmt = db_->PrepareStatement(
         "INSERT INTO signatures (image_id, compressed_signature) VALUES(?, ?)");
 
     if (stmt == nullptr)
         return -1;
 
     PuzzleCompressedCvec ccvec;
-    const PuzzleCvec* source = image.GetCvec();
+    auto source = image->GetCvec();
 
     puzzle_init_compressed_cvec(puzzle_, &ccvec);
     if (puzzle_compress_cvec(puzzle_, &ccvec, source) != 0)
@@ -140,23 +140,24 @@ sqlite3_int64 Context::SaveImageSignature(const Image& image, sqlite3_int64 imag
     return db_->GetLastRowID();
 }
 
-bool Context::SaveImageWords(const Image& image, sqlite3_int64 image_id,
+bool Context::SaveImageWords(const Image* image, sqlite3_int64 image_id,
                              sqlite3_int64 signature_id)
 {
     (void)image_id;
     auto console = spdlog::get("console");
-    sqlite3_stmt* stmt = db_->PrepareStatement(
+    auto stmt = db_->PrepareStatement(
         "INSERT INTO words (signature_id, pos_and_word) VALUES(?, ?)");
 
     if (stmt == nullptr)
         return false;
 
-    auto words = image.GetCompressedWords();
-    
+    auto words = CompressWords(image->GetWords());
+
     for (auto word : words)
     {
+        sqlite3_reset(stmt);
         sqlite3_bind_int64(stmt, 1, signature_id);
-        sqlite3_bind_blob(stmt, 2, word.word, word.size, NULL);
+        sqlite3_bind_blob(stmt, 2, word.data(), word.size(), NULL);
 
         if (sqlite3_step(stmt) != SQLITE_DONE)
         {
@@ -167,4 +168,33 @@ bool Context::SaveImageWords(const Image& image, sqlite3_int64 image_id,
     sqlite3_finalize(stmt);
 
     return true;
+}
+
+std::vector<std::string>
+Context::CompressWords(const std::vector<std::string>& words) const
+{
+    PuzzleCvec cvec;
+    PuzzleCompressedCvec compressed_cvec;
+    std::vector<std::string> result;
+
+    result.reserve(words.size());
+    puzzle_init_cvec(puzzle_, &cvec);
+    puzzle_init_compressed_cvec(puzzle_, &compressed_cvec);
+
+    for (auto word : words)
+    {
+        cvec.vec =
+            reinterpret_cast<signed char*>(const_cast<char*>(word.data()));
+        cvec.sizeof_vec = word.size();
+
+        assert(puzzle_compress_cvec(puzzle_, &compressed_cvec, &cvec) == 0);
+
+        result.push_back(
+            std::string(reinterpret_cast<char*>(compressed_cvec.vec),
+                        compressed_cvec.sizeof_compressed_vec));
+
+        puzzle_free_compressed_cvec(puzzle_, &compressed_cvec);
+    }
+
+    return result;
 }

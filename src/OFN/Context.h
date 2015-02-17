@@ -18,6 +18,7 @@
 #pragma once
 
 #include <string>
+#include <vector>
 #include <memory>
 
 #include <sqlite3.h>
@@ -63,20 +64,26 @@ public:
      *
      * @returns The inserted row ID on success, -1 otherwise.
      */
-    sqlite3_int64 SaveImage(const Image& image);
+    sqlite3_int64 SaveImage(const Image* image);
 
     /**
      * @brief Save the image signature to the database.
      *
      * @returns The inserted row ID on success, -1 otherwise.
      */
-    sqlite3_int64 SaveImageSignature(const Image& image, sqlite3_int64 image_id);
+    sqlite3_int64 SaveImageSignature(const Image* image, sqlite3_int64 image_id);
 
     /**
      * @brief Save the image words compressed to the database.
      */
-    bool SaveImageWords(const Image& image, sqlite3_int64 image_id,
+    bool SaveImageWords(const Image* image, sqlite3_int64 image_id,
                         sqlite3_int64 signature_id);
+
+    /**
+     * @brief Compress a list of words using PuzzleCompressedCvec.
+     */
+    std::vector<std::string>
+    CompressWords(const std::vector<std::string>& words) const;
 
 public:
     /** Getters */

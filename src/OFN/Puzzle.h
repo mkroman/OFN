@@ -17,4 +17,16 @@
 
 #pragma once
 
-static const char* OFN_VERSION = "0.1.1";
+#include <stdexcept>
+
+namespace OFN
+{
+
+class PuzzleException : public std::runtime_error
+{
+public:
+    PuzzleException(const std::string& what_arg) : 
+        std::runtime_error(what_arg) {}
+};
+
+}
