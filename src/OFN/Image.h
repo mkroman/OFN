@@ -21,9 +21,7 @@
 #include <vector>
 #include <memory>
 
-extern "C" {
-# include <puzzle.h>
-}
+#include "OFN/Puzzle.h"
 
 namespace OFN
 {
@@ -70,12 +68,12 @@ public:
      *
      * @returns the cvec.
      */
-    const PuzzleCvec* GetCvec() const { return cvec_; }
+    auto GetCvec() { return cvec_; }
 
 private:
     std::shared_ptr<Context> context_;
     std::string file_name_;
-    PuzzleCvec* cvec_;
+    Puzzle::CVec* cvec_;
 };
 
 }

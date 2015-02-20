@@ -23,7 +23,7 @@
 
 #include <sqlite3.h>
 
-typedef struct PuzzleContext_ PuzzleContext;
+#include "OFN/Puzzle.h"
 
 namespace OFN
 {
@@ -88,13 +88,16 @@ public:
     StringVector CompressWords(const StringVector& words) const;
 
 public:
-    /** Getters */
-    PuzzleContext* GetPuzzleContext() const { return puzzle_; }
+    /* Getters */
+    std::shared_ptr<Puzzle::Context> GetPuzzleContext() const
+    {
+        return puzzle_;
+    }
 
 private:
     int error_;
     std::shared_ptr<Database> db_;
-    PuzzleContext* puzzle_;
+    std::shared_ptr<Puzzle::Context> puzzle_;
 };
 
 }

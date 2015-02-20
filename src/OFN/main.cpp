@@ -71,7 +71,7 @@ void Application::Commit(std::vector<std::string> parameters)
 
         context_->Commit(image);
     }
-    catch (PuzzleException& error)
+    catch (Puzzle::RuntimeError& error)
     {
         console->error("Puzzle error: {}", error.what());
     }

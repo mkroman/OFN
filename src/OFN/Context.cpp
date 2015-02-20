@@ -18,10 +18,7 @@
 #include <cstdio>
 #include <cstddef>
 
-extern "C" {
-# include <puzzle.h>
-}
-
+#include "OFN/Puzzle.h"
 #include "OFN/OFN.h"
 #include "OFN/Image.h"
 #include "OFN/Context.h"
@@ -30,28 +27,28 @@ extern "C" {
 using namespace OFN;
 
 Context::Context() :
-    db_(std::make_shared<Database>("ofn.db"))
+    db_(std::make_shared<Database>("ofn.db")),
+    puzzle_(std::make_shared<Puzzle::Context>())
 {
-    puzzle_ = new PuzzleContext;
-    puzzle_init_context(puzzle_);
 }
 
 Context::~Context()
 {
-    puzzle_free_context(puzzle_);
-    delete puzzle_;
 }
 
 void Context::Search(const std::shared_ptr<Image>& image)
 {
-    Console->info("Searching for images similar to {}", image->GetFileName());
+    auto console = spdlog::get("console");
+
+    console->info("Searching for images similar to {}", image->GetFileName());
 }
 
 void Context::Commit(const std::shared_ptr<Image>& image)
 {
+    auto console = spdlog::get("console");
     sqlite3_int64 image_id, signature_id;
 
-    Console->debug("Comitting image {}", image->GetFileName());
+    console->debug("Comitting image {}", image->GetFileName());
 
     if ((image_id = SaveImage(image)) == -1)
     {
@@ -61,7 +58,7 @@ void Context::Commit(const std::shared_ptr<Image>& image)
 
     if ((signature_id = SaveImageSignature(image, image_id)) == -1)
     {
-        Console->error("SaveImageSignature returned -1");
+        console->error("SaveImageSignature returned -1");
         return;
     }
 
@@ -70,7 +67,7 @@ void Context::Commit(const std::shared_ptr<Image>& image)
 
     if (!SaveImageWords(image, image_id, signature_id))
     {
-        Console->error("SaveImageWords failed");
+        console->error("SaveImageWords failed");
     }
 
     db_->Execute("END TRANSACTION");
@@ -78,6 +75,7 @@ void Context::Commit(const std::shared_ptr<Image>& image)
 
 sqlite3_int64 Context::SaveImage(const std::shared_ptr<Image>& image)
 {
+    auto console = spdlog::get("console");
     auto stmt = db_->PrepareStatement(
         "INSERT INTO images (filename, digest) VALUES (?, ?)");
 
@@ -90,7 +88,7 @@ sqlite3_int64 Context::SaveImage(const std::shared_ptr<Image>& image)
 
     if (sqlite3_step(stmt) != SQLITE_DONE)
     {
-        Console->error("{} failed: {}", __FUNCTION__, db_->GetErrorMessage());
+        console->error("{} failed: {}", __FUNCTION__, db_->GetErrorMessage());
 
         sqlite3_finalize(stmt);
 
@@ -111,18 +109,12 @@ sqlite3_int64 Context::SaveImageSignature(const std::shared_ptr<Image>& image,
     if (stmt == nullptr)
         return -1;
 
-    PuzzleCompressedCvec ccvec;
-    auto source = image->GetCvec();
-
-    puzzle_init_compressed_cvec(puzzle_, &ccvec);
-    if (puzzle_compress_cvec(puzzle_, &ccvec, source) != 0)
-        return -1;
+    auto cvec = image->GetCvec();
+    auto compressed = cvec->Compress();
 
     sqlite3_bind_int64(stmt, 1, image_id);
-    sqlite3_bind_blob(stmt, 2, ccvec.vec, ccvec.sizeof_compressed_vec,
+    sqlite3_bind_blob(stmt, 2, compressed->GetVec(), compressed->GetSize(),
                       SQLITE_TRANSIENT);
-
-    puzzle_free_compressed_cvec(puzzle_, &ccvec);
 
     if (sqlite3_step(stmt) != SQLITE_DONE)
     {
@@ -167,27 +159,22 @@ bool Context::SaveImageWords(const std::shared_ptr<Image>& image,
 Context::StringVector
 Context::CompressWords(const Context::StringVector& words) const
 {
-    PuzzleCvec cvec;
-    PuzzleCompressedCvec compressed_cvec;
+    Puzzle::CVec cvec(puzzle_);
+    Puzzle::CompressedCVec compressed_cvec(puzzle_);
     std::vector<std::string> result;
 
     result.reserve(words.size());
-    puzzle_init_cvec(puzzle_, &cvec);
-    puzzle_init_compressed_cvec(puzzle_, &compressed_cvec);
 
     for (auto word : words)
     {
-        cvec.vec =
-            reinterpret_cast<signed char*>(const_cast<char*>(word.data()));
-        cvec.sizeof_vec = word.size();
+        cvec.SetVec(word);
+        compressed_cvec.Compress(cvec);
 
-        assert(puzzle_compress_cvec(puzzle_, &compressed_cvec, &cvec) == 0);
+        result.emplace_back(reinterpret_cast<char*>(compressed_cvec.GetVec()),
+                            compressed_cvec.GetSize());
 
-        result.push_back(
-            std::string(reinterpret_cast<char*>(compressed_cvec.vec),
-                        compressed_cvec.sizeof_compressed_vec));
-
-        puzzle_free_compressed_cvec(puzzle_, &compressed_cvec);
+        puzzle_free_compressed_cvec(puzzle_->GetPuzzleContext(),
+                                    compressed_cvec.GetCvec());
     }
 
     return result;
