@@ -65,6 +65,7 @@ void Application::Commit(std::vector<std::string> parameters)
     auto filename = parameters[0];
 
     console->info("Comitting image `{}'", filename);
+
     try
     {
         auto image = std::make_shared<OFN::Image>(context_, filename);

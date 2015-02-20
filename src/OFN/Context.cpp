@@ -164,6 +164,7 @@ Context::CompressWords(const Context::StringVector& words) const
     std::vector<std::string> result;
 
     result.reserve(words.size());
+    signed char* orig = cvec.GetVec();
 
     for (auto word : words)
     {
@@ -175,7 +176,10 @@ Context::CompressWords(const Context::StringVector& words) const
 
         puzzle_free_compressed_cvec(puzzle_->GetPuzzleContext(),
                                     compressed_cvec.GetCvec());
+        
     }
+
+    cvec.SetVec(orig);
 
     return result;
 }
