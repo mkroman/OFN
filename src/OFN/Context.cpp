@@ -42,12 +42,12 @@ Context::~Context()
     delete puzzle_;
 }
 
-void Context::Search(std::shared_ptr<Image> image)
+void Context::Search(const std::shared_ptr<Image>& image)
 {
     Console->info("Searching for images similar to {}", image->GetFileName());
 }
 
-void Context::Commit(std::shared_ptr<Image> image)
+void Context::Commit(const std::shared_ptr<Image>& image)
 {
     sqlite3_int64 image_id, signature_id;
 
@@ -76,7 +76,7 @@ void Context::Commit(std::shared_ptr<Image> image)
     db_->Execute("END TRANSACTION");
 }
 
-sqlite3_int64 Context::SaveImage(std::shared_ptr<Image> image)
+sqlite3_int64 Context::SaveImage(const std::shared_ptr<Image>& image)
 {
     auto stmt = db_->PrepareStatement(
         "INSERT INTO images (filename, digest) VALUES (?, ?)");
@@ -102,7 +102,7 @@ sqlite3_int64 Context::SaveImage(std::shared_ptr<Image> image)
     return db_->GetLastRowID();
 }
 
-sqlite3_int64 Context::SaveImageSignature(std::shared_ptr<Image> image,
+sqlite3_int64 Context::SaveImageSignature(const std::shared_ptr<Image>& image,
                                           sqlite3_int64 image_id)
 {
     auto stmt = db_->PrepareStatement(
@@ -135,7 +135,7 @@ sqlite3_int64 Context::SaveImageSignature(std::shared_ptr<Image> image,
     return db_->GetLastRowID();
 }
 
-bool Context::SaveImageWords(std::shared_ptr<Image> image,
+bool Context::SaveImageWords(const std::shared_ptr<Image>& image,
                              sqlite3_int64 image_id, sqlite3_int64 signature_id)
 {
     (void)image_id;
