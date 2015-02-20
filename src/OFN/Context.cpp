@@ -107,7 +107,8 @@ sqlite3_int64 Context::SaveImage(const Image* image)
     return db_->GetLastRowID();
 }
 
-sqlite3_int64 Context::SaveImageSignature(const Image* image, sqlite3_int64 image_id)
+sqlite3_int64 Context::SaveImageSignature(const Image* image,
+                                          sqlite3_int64 image_id)
 {
     auto console = spdlog::get("console");
     auto stmt = db_->PrepareStatement(
@@ -170,8 +171,8 @@ bool Context::SaveImageWords(const Image* image, sqlite3_int64 image_id,
     return true;
 }
 
-std::vector<std::string>
-Context::CompressWords(const std::vector<std::string>& words) const
+Context::StringVector
+Context::CompressWords(const Context::StringVector& words) const
 {
     PuzzleCvec cvec;
     PuzzleCompressedCvec compressed_cvec;

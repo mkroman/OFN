@@ -26,12 +26,14 @@
 #include "OFN/Context.h"
 #include "OFN/Puzzle.h"
 
-void cmd_commit(const char* filename, OFN::Context* c);
-void cmd_search(const char* filename, OFN::Context* c);
+using ContextPtr = std::shared_ptr<OFN::Context>;
+
+void cmd_commit(const char* filename, ContextPtr c);
+void cmd_search(const char* filename, ContextPtr c);
 
 struct command {
     const char* name;
-    void (*function)(const char*, OFN::Context*);
+    void (*function)(const char*, ContextPtr);
 };
 
 static struct option command_line_options[] = {
@@ -46,12 +48,12 @@ static struct command command_line_commands[] = {
     { 0, 0 }
 };
 
-void cmd_commit(const char* filename, OFN::Context* c)
+void cmd_commit(const char* filename, ContextPtr context)
 {
     try
     {
-        OFN::Image* image = new OFN::Image(c, filename);
-        c->Commit(image);
+        context->Commit(
+            std::unique_ptr<OFN::Image>(new OFN::Image(context, filename)));
     }
     catch (const OFN::PuzzleException& exception)
     {
@@ -104,7 +106,8 @@ int main(int argc, char** argv)
         }
     }
 
-    OFN::Context ctx;
+
+    auto context = std::make_shared<OFN::Context>();
     const char* cmd;
 
     if (optind < argc)
@@ -118,11 +121,11 @@ int main(int argc, char** argv)
             return EXIT_FAILURE;
         }
 
-        for (struct command* c = command_line_commands; c->name != 0; c++)
+        for (auto* c = command_line_commands; c->name != 0; c++)
         {
             if (strcmp(c->name, cmd) == 0)
             {
-                c->function(argv[optind++], &ctx);
+                c->function(argv[optind++], context);
                 break;
             }
         }

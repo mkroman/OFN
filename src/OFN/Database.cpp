@@ -23,10 +23,9 @@
 
 using namespace OFN;
 
-auto console = spdlog::stdout_logger_mt("console");
-
 void Database::print_sqlite_trace(void* argument, const char* sql)
 {
+    auto console = spdlog::stdout_logger_mt("console");
     const Database* db = reinterpret_cast<Database*>(argument);
 
     console->info("({}) SQL: {}", db->GetPath(), sql);
@@ -35,6 +34,8 @@ void Database::print_sqlite_trace(void* argument, const char* sql)
 Database::Database(const std::string& path) :
     db_path_(path)
 {
+    auto console = spdlog::stdout_logger_mt("console");
+
     if (sqlite3_open(path.c_str(), &db_) != SQLITE_OK)
     {
         console->error("Failed to open sqlite3 database: {}",
@@ -46,6 +47,8 @@ Database::Database(const std::string& path) :
 
 Database::~Database()
 {
+    auto console = spdlog::stdout_logger_mt("console");
+
     if (sqlite3_close(db_) != SQLITE_OK)
     {
         console->error("Failed to close sqlite3 database: {}",

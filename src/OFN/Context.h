@@ -49,6 +49,8 @@ public:
     ~Context();
 
 public:
+    using StringVector = std::vector<std::string>;
+
     /**
      * Commit a new image and its fingerprint to the database.
      */
@@ -82,8 +84,7 @@ public:
     /**
      * @brief Compress a list of words using PuzzleCompressedCvec.
      */
-    std::vector<std::string>
-    CompressWords(const std::vector<std::string>& words) const;
+    StringVector CompressWords(const StringVector& words) const;
 
 public:
     /** Getters */
