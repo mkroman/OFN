@@ -51,6 +51,9 @@ public:
         CommandLineError(const char* msg) : std::runtime_error(msg) {}
     };
 
+    /**
+     * Command structure for defining command-line commands.
+     */
     struct Command
     {
         using Functor = void (Application::*)(std::vector<std::string>);
@@ -58,11 +61,6 @@ public:
         const char* name;
         Functor function;
     };
-
-    /**
-     * Application parameter list.
-     */
-    using ParameterList = std::vector<std::string>;
 
 public:
 
@@ -100,7 +98,7 @@ public:
      * @return A string vector with additional parameters (i.e. parameters that
      *   didn't set any flags)
      */
-    ParameterList ParseParameters(int argc, char* argv[]);
+    std::vector<std::string> ParseParameters(int argc, char* argv[]);
 
 protected:
     std::shared_ptr<Context> context_;

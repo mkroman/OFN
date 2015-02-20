@@ -29,13 +29,14 @@
 #include "OFN/Puzzle.h"
 
 using namespace OFN;
-using ParameterList = Application::ParameterList;
 
+/** Command-line options. */
 static constexpr struct option CommandLineOptions[] = {
     { "help",    no_argument, 0, 'h' },
     { "version", no_argument, 0, 'v' }
 };
 
+/** Command-line command arguments. */
 static constexpr struct Application::Command Commands[] = {
     { "commit", &Application::Commit },
     { "search", &Application::Search }
@@ -56,7 +57,6 @@ void Application::Search(std::vector<std::string> parameters)
     auto filename = parameters[0];
 
     console->info("Searching for similar images to `{}'", filename);
-
 }
 
 void Application::Commit(std::vector<std::string> parameters)
@@ -76,6 +76,8 @@ void Application::Commit(std::vector<std::string> parameters)
         console->error("Puzzle error: {}", error.what());
     }
 }
+
+using ParameterList = std::vector<std::string>;
 
 ParameterList Application::ParseParameters(int argc, char* argv[])
 {
