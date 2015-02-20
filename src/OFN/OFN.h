@@ -66,9 +66,6 @@ public:
 
     /**
      * Construct a new application instance.
-     *
-     * @param argc The number of arguments
-     * @param argv A pointer to an array of arguments.
      */
     Application();
 
@@ -95,6 +92,8 @@ public:
     /**
      * Parse the command-line parameters and set flags accordingly.
      *
+     * @param argc The number of arguments
+     * @param argv A pointer to an array of arguments
      * @return A string vector with additional parameters (i.e. parameters that
      *   didn't set any flags)
      */
