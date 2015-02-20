@@ -29,8 +29,8 @@ extern "C" {
 
 using namespace OFN;
 
-Image::Image(const Context* context, const std::string& filename)
-    : context_(context),
+Image::Image(std::shared_ptr<Context> context, const std::string& filename) :
+    context_(context),
     file_name_(filename)
 {
     auto ctx = context->GetPuzzleContext();

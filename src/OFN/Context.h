@@ -54,31 +54,32 @@ public:
     /**
      * Commit a new image and its fingerprint to the database.
      */
-    void Commit(Image* image);
+    void Commit(std::shared_ptr<Image> image);
 
     /**
      * Search for similar images in the database.
      */
-    void Search(Image* image);
+    void Search(std::shared_ptr<Image> image);
 
     /**
      * @brief Save the image to the database.
      *
      * @returns The inserted row ID on success, -1 otherwise.
      */
-    sqlite3_int64 SaveImage(const Image* image);
+    sqlite3_int64 SaveImage(std::shared_ptr<Image> image);
 
     /**
      * @brief Save the image signature to the database.
      *
      * @returns The inserted row ID on success, -1 otherwise.
      */
-    sqlite3_int64 SaveImageSignature(const Image* image, sqlite3_int64 image_id);
+    sqlite3_int64 SaveImageSignature(std::shared_ptr<Image> image,
+                                     sqlite3_int64 image_id);
 
     /**
      * @brief Save the image words compressed to the database.
      */
-    bool SaveImageWords(const Image* image, sqlite3_int64 image_id,
+    bool SaveImageWords(std::shared_ptr<Image> image, sqlite3_int64 image_id,
                         sqlite3_int64 signature_id);
 
     /**

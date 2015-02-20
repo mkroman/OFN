@@ -18,6 +18,8 @@
 #include <iostream>
 #include <cstdlib>
 #include <cstdio>
+#include <algorithm>
+#include <iterator>
 #include <getopt.h>
 #include <cstring>
 
@@ -26,109 +28,135 @@
 #include "OFN/Context.h"
 #include "OFN/Puzzle.h"
 
-using ContextPtr = std::shared_ptr<OFN::Context>;
+using namespace OFN;
+using ParameterList = Application::ParameterList;
 
-void cmd_commit(const char* filename, ContextPtr c);
-void cmd_search(const char* filename, ContextPtr c);
-
-struct command {
-    const char* name;
-    void (*function)(const char*, ContextPtr);
-};
-
-static struct option command_line_options[] = {
+static constexpr struct option CommandLineOptions[] = {
     { "help",    no_argument, 0, 'h' },
-    { "version", no_argument, 0, 'v' },
-    { 0,         0,           0, 0 }
+    { "version", no_argument, 0, 'v' }
 };
 
-static struct command command_line_commands[] = {
-    { "commit", cmd_commit },
-    { "search", cmd_search },
-    { 0, 0 }
+static constexpr struct Application::Command Commands[] = {
+    { "commit", &Application::Commit },
+    { "search", &Application::Search }
 };
 
-void cmd_commit(const char* filename, ContextPtr context)
+Application::Application() :
+    context_(std::make_shared<Context>())
 {
+}
+
+Application::~Application()
+{
+}
+
+void Application::Search(std::vector<std::string> parameters)
+{
+    auto console = spdlog::get("console");
+    auto filename = parameters[0];
+
+    console->info("Searching for similar images to `{}'", filename);
+
+}
+
+void Application::Commit(std::vector<std::string> parameters)
+{
+    auto console = spdlog::get("console");
+    auto filename = parameters[0];
+
+    console->info("Comitting image `{}'", filename);
     try
     {
-        context->Commit(
-            std::unique_ptr<OFN::Image>(new OFN::Image(context, filename)));
+        auto image = std::make_shared<OFN::Image>(context_, filename);
+
+        context_->Commit(image);
     }
-    catch (const OFN::PuzzleException& exception)
+    catch (PuzzleException& error)
     {
-        fprintf(stderr, "libpuzzle exception thrown: %s\n", exception.what());
+        console->error("Puzzle error: {}", error.what());
     }
 }
 
-void cmd_search(const char* filename, OFN::Context* c)
+ParameterList Application::ParseParameters(int argc, char* argv[])
 {
-    try
+    int option;
+    int idx = 0;
+    ParameterList parameters;
+
+    if (argc < 2)
     {
-        auto image = new OFN::Image(c, filename);
-        c->Search(image);
-        delete image;
+        PrintUsage(argv[0]);
+
+        return ParameterList();
     }
-    catch (const OFN::PuzzleException& exception)
+
+    while ((option = getopt_long(argc, argv, "hv", CommandLineOptions, &idx)) !=
+           -1)
     {
-        fprintf(stderr, "libpuzzle exception thrown: %s\n", exception.what());
+        if (option == 'h')
+        {
+            PrintUsage(argv[0]);
+
+            return ParameterList();
+        }
+        else if (option == 'v')
+        {
+            printf("OFN %s (c) Mikkel Kroman\n\n", OFN::Version);
+        }
     }
+
+    while (optind < argc)
+        parameters.emplace_back(argv[optind++]);
+
+    return parameters;
 }
 
-void print_usage(const char* executable)
+void Application::PrintUsage(const char* executable)
 {
-    printf("Usage: %s [-h] commit|search <file>\n\n", executable);
-    printf("ofn %s (c) Mikkel Kroman\n\n", OFN_VERSION);
+    printf("Usage: %s [-h] <commit|search> <file>\n\n", executable);
+    printf("ofn %s (c) Mikkel Kroman\n\n", OFN::Version);
     puts("Options:");
     puts("  -h, --help     Display this message\n");
 }
 
-int main(int argc, char** argv)
+int main(int argc, char* argv[])
 {
-    int option;
-    int option_index = 0;
+    auto app = std::make_unique<Application>();
+    auto console = spdlog::get("console");
 
-    if (argc < 2)
+    try
     {
-        print_usage(argv[0]);
+        auto parameters = app->ParseParameters(argc, argv);
 
-        return EXIT_SUCCESS;
-    }
-
-    while ((option = getopt_long(argc, argv, "hv", command_line_options,
-                                 &option_index)) != -1)
-    {
-        if (option == 'h')
+        if (parameters.size() < 2)
         {
-            print_usage(argv[0]);
+            app->PrintUsage(argv[0]);
 
             return EXIT_SUCCESS;
         }
+
+        auto command =
+            std::find_if(std::begin(Commands), std::end(Commands), [&](auto c) {
+                return c.name == parameters[0];
+            });
+
+        if (command != std::end(Commands))
+        {
+            /* Remove the command parameter */
+            parameters.erase(std::begin(parameters));
+
+            /* Call the associated command */
+            ((*app).*command->function)(parameters);
+        }
+        else
+        {
+            console->error("Unknown command `{}'", parameters[0]);
+            return 1;
+        }
     }
-
-
-    auto context = std::make_shared<OFN::Context>();
-    const char* cmd;
-
-    if (optind < argc)
+    catch (Application::CommandLineError& error)
     {
-        cmd = argv[optind++];
-
-        if (optind == argc)
-        {
-            fprintf(stderr, "Missing file argument\n");
-
-            return EXIT_FAILURE;
-        }
-
-        for (auto* c = command_line_commands; c->name != 0; c++)
-        {
-            if (strcmp(c->name, cmd) == 0)
-            {
-                c->function(argv[optind++], context);
-                break;
-            }
-        }
+        console->error("Application command-line error: {}", error.what());
     }
 
     return 0;

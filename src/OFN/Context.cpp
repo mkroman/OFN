@@ -22,8 +22,7 @@ extern "C" {
 # include <puzzle.h>
 }
 
-#include "spdlog/spdlog.h"
-
+#include "OFN/OFN.h"
 #include "OFN/Image.h"
 #include "OFN/Context.h"
 #include "OFN/Database.h"
@@ -43,29 +42,26 @@ Context::~Context()
     delete puzzle_;
 }
 
-void Context::Search(Image* image)
+void Context::Search(std::shared_ptr<Image> image)
 {
-    auto console = spdlog::stdout_logger_mt("console");
-
-    console->info("Searching for images similar to {}", image->GetFileName());
+    Console->info("Searching for images similar to {}", image->GetFileName());
 }
 
-void Context::Commit(Image* image)
+void Context::Commit(std::shared_ptr<Image> image)
 {
     sqlite3_int64 image_id, signature_id;
-    auto console = spdlog::stdout_logger_mt("console");
 
-    console->debug("Comitting image {}", image->GetFileName());
+    Console->debug("Comitting image {}", image->GetFileName());
 
     if ((image_id = SaveImage(image)) == -1)
     {
-        console->error("SaveImage returned -1");
+        Console->error("SaveImage returned -1");
         return;
     }
 
     if ((signature_id = SaveImageSignature(image, image_id)) == -1)
     {
-        console->error("SaveImageSignature returned -1");
+        Console->error("SaveImageSignature returned -1");
         return;
     }
 
@@ -74,15 +70,14 @@ void Context::Commit(Image* image)
 
     if (!SaveImageWords(image, image_id, signature_id))
     {
-        console->error("SaveImageWords failed");
+        Console->error("SaveImageWords failed");
     }
 
     db_->Execute("END TRANSACTION");
 }
 
-sqlite3_int64 Context::SaveImage(const Image* image)
+sqlite3_int64 Context::SaveImage(std::shared_ptr<Image> image)
 {
-    auto console = spdlog::get("console");
     auto stmt = db_->PrepareStatement(
         "INSERT INTO images (filename, digest) VALUES (?, ?)");
 
@@ -95,7 +90,7 @@ sqlite3_int64 Context::SaveImage(const Image* image)
 
     if (sqlite3_step(stmt) != SQLITE_DONE)
     {
-        console->error("{} failed: {}", __FUNCTION__, db_->GetErrorMessage());
+        Console->error("{} failed: {}", __FUNCTION__, db_->GetErrorMessage());
 
         sqlite3_finalize(stmt);
 
@@ -107,10 +102,9 @@ sqlite3_int64 Context::SaveImage(const Image* image)
     return db_->GetLastRowID();
 }
 
-sqlite3_int64 Context::SaveImageSignature(const Image* image,
+sqlite3_int64 Context::SaveImageSignature(std::shared_ptr<Image> image,
                                           sqlite3_int64 image_id)
 {
-    auto console = spdlog::get("console");
     auto stmt = db_->PrepareStatement(
         "INSERT INTO signatures (image_id, compressed_signature) VALUES(?, ?)");
 
@@ -141,11 +135,10 @@ sqlite3_int64 Context::SaveImageSignature(const Image* image,
     return db_->GetLastRowID();
 }
 
-bool Context::SaveImageWords(const Image* image, sqlite3_int64 image_id,
-                             sqlite3_int64 signature_id)
+bool Context::SaveImageWords(std::shared_ptr<Image> image,
+                             sqlite3_int64 image_id, sqlite3_int64 signature_id)
 {
     (void)image_id;
-    auto console = spdlog::get("console");
     auto stmt = db_->PrepareStatement(
         "INSERT INTO words (signature_id, pos_and_word) VALUES(?, ?)");
 
@@ -162,7 +155,7 @@ bool Context::SaveImageWords(const Image* image, sqlite3_int64 image_id,
 
         if (sqlite3_step(stmt) != SQLITE_DONE)
         {
-            console->error("Failed to insert word: {}", db_->GetErrorMessage());
+            Console->error("Failed to insert word: {}", db_->GetErrorMessage());
         }
     }
 

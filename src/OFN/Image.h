@@ -19,6 +19,7 @@
 
 #include <string>
 #include <vector>
+#include <memory>
 
 extern "C" {
 # include <puzzle.h>
@@ -45,7 +46,7 @@ public:
      * @param context The OFN context.
      * @param filename The image filename.
      */
-    Image(const Context* context, const std::string& filename);
+    Image(std::shared_ptr<Context> context, const std::string& filename);
 
     /**
      * Destructor.
@@ -72,7 +73,7 @@ public:
     const PuzzleCvec* GetCvec() const { return cvec_; }
 
 private:
-    const Context* context_;
+    std::shared_ptr<Context> context_;
     std::string file_name_;
     PuzzleCvec* cvec_;
 };
