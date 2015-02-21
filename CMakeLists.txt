@@ -26,6 +26,7 @@ set (CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake")
 set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14")
 
 find_package (LibPuzzle REQUIRED)
+find_package (OpenSSL REQUIRED)
 
 set (CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -DSPDLOG_DEBUG_ON")
 
@@ -44,6 +45,7 @@ set (ofn_SOURCE
 
 include_directories (${CMAKE_CURRENT_SOURCE_DIR}/src)
 include_directories (${CMAKE_CURRENT_SOURCE_DIR}/src/spdlog/include)
+include_directories (${OPENSSL_INCLUDE_DIR})
 
 add_executable (ofn ${ofn_SOURCE})
-target_link_libraries (ofn ${LIBPUZZLE_LIBRARY} sqlite3)
+target_link_libraries (ofn ${LIBPUZZLE_LIBRARY} sqlite3 ${OPENSSL_LIBRARIES})

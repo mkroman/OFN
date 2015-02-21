@@ -87,6 +87,16 @@ public:
      */
     StringVector CompressWords(const StringVector& words) const;
 
+
+    /**
+     * @brief Compute a SHA256 hash for a given file.
+     *
+     * @param string path to the file to generate a digest for
+     *
+     * @returns the hash as a string, but in raw form.
+     */
+    std::string SHA256File(const std::string& file) const;
+
 public:
     /* Getters */
     std::shared_ptr<Puzzle::Context> GetPuzzleContext() const

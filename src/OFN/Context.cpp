@@ -17,6 +17,12 @@
 
 #include <cstdio>
 #include <cstddef>
+#include <fstream>
+
+#include <openssl/sha.h>
+#ifdef OPENSSL_NO_SHA256
+# error "OFN requires OpenSSL with SHA256 enabled"
+#endif
 
 #include "OFN/Puzzle.h"
 #include "OFN/OFN.h"
@@ -82,9 +88,11 @@ sqlite3_int64 Context::SaveImage(const std::shared_ptr<Image>& image)
     if (stmt == nullptr)
         return -1;
 
+    auto digest = SHA256File(image->GetFileName());
+
     sqlite3_bind_text(stmt, 1, image->GetFileName().c_str(),
                       image->GetFileName().size(), NULL);
-    sqlite3_bind_text(stmt, 2, "111", 4, NULL);
+    sqlite3_bind_blob(stmt, 2, digest.data(), digest.size(), NULL);
 
     if (sqlite3_step(stmt) != SQLITE_DONE)
     {
@@ -182,4 +190,33 @@ Context::CompressWords(const Context::StringVector& words) const
     cvec.SetVec(orig);
 
     return result;
+}
+
+std::string Context::SHA256File(const std::string& path) const
+{
+    std::ifstream file(path);
+    const int buffer_size = 4096;
+    char digest[SHA256_DIGEST_LENGTH];
+    SHA256_CTX sha256;
+
+    if (!file.good())
+        return nullptr;
+
+    auto buffer = new char[buffer_size];
+
+    SHA256_Init(&sha256);
+
+    while (!file.eof())
+    {
+        file.read(buffer, buffer_size);
+
+        if (file.fail())
+            break;
+
+        SHA256_Update(&sha256, buffer, file.gcount());
+    }
+
+    delete[] buffer;
+    SHA256_Final(reinterpret_cast<unsigned char*>(digest), &sha256);
+    return std::string(digest, SHA256_DIGEST_LENGTH);
 }
