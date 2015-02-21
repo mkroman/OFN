@@ -1,4 +1,4 @@
-CREATE TABLE `postings` (
+CREATE TABLE IF NOT EXISTS `postings` (
   `id` INTEGER PRIMARY KEY AUTOINCREMENT,
   `nick` CHAR(31) NOT NULL,
   `user` CHAR(64) NOT NULL,
@@ -7,22 +7,23 @@ CREATE TABLE `postings` (
   `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE `images` (
+CREATE TABLE IF NOT EXISTS `images` (
   `id` INTEGER PRIMARY KEY AUTOINCREMENT,
-  `digest` CHAR(64) NOT NULL,
+  `digest` CHAR(64) UNIQUE NOT NULL,
   `filename` CHAR(255) NOT NULL,
   `posting_id` INTEGER
 );
 
-CREATE TABLE `signatures` (
+CREATE TABLE IF NOT EXISTS `signatures` (
   `id` INTEGER PRIMARY KEY AUTOINCREMENT,
   `image_id` INTEGER NOT NULL,
-  `compressed_signature` BLOB(182) NOT NULL UNIQUE
+  `compressed_signature` BLOB(182) UNIQUE NOT NULL
 );
 
-CREATE TABLE `words` (
+CREATE TABLE IF NOT EXISTS `words` (
   `pos_and_word` BLOB(5) NOT NULL,
   `signature_id` INTEGER NOT NULL
 );
 
-CREATE INDEX idx_pos_words ON words(pos_and_word);
+CREATE INDEX IF NOT EXISTS idx_pos_words ON words(pos_and_word);
+CREATE INDEX IF NOT EXISTS idx_image_digest ON images(digest);
