@@ -25,6 +25,8 @@ set (CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake")
 # Set the compiler standards flag
 set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14")
 
+include (cotire)
+
 find_package (LibPuzzle REQUIRED)
 find_package (OpenSSL REQUIRED)
 
@@ -44,9 +46,15 @@ set (ofn_SOURCE
   src/OFN/Image.cpp
 )
 
+set_property (DIRECTORY
+  PROPERTY COTIRE_PREFIX_HEADER_IGNORE_PATH 
+  "${LIBPUZZLE_INCLUDE_DIR}/puzzle.h"
+  "${CMAKE_SOURCE_DIR}" "${CMAKE_BINARY_DIR}")
+
 include_directories (${CMAKE_CURRENT_SOURCE_DIR}/src)
 include_directories (${CMAKE_CURRENT_SOURCE_DIR}/src/spdlog/include)
 include_directories (${OPENSSL_INCLUDE_DIR})
 
 add_executable (ofn ${ofn_SOURCE})
 target_link_libraries (ofn ${LIBPUZZLE_LIBRARY} sqlite3 ${OPENSSL_LIBRARIES})
+cotire(ofn)
