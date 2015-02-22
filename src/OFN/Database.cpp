@@ -28,7 +28,7 @@ void Database::print_sqlite_trace(void* argument, const char* sql)
 {
     const Database* db = reinterpret_cast<Database*>(argument);
 
-    Console->info("({}) SQL: {}", db->GetPath(), sql);
+    Console->info("SQL: {}", sql);
 }
 
 Database::Database(const std::string& path) :

@@ -52,7 +52,7 @@ public:
 /**
  * Bitmap load error class.
  */
-class BitmapLoadError : RuntimeError
+class BitmapLoadError : public RuntimeError
 {
 public:
     /**

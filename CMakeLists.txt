@@ -38,6 +38,7 @@ set (OFN_DESCRIPTION "Image recognition tool to determine if an image has been s
 set (ofn_SOURCE
   src/OFN/main.cpp
   src/OFN/Puzzle.cpp
+  src/OFN/SQLite3.cpp
   src/OFN/Context.cpp
   src/OFN/Database.cpp
   src/OFN/Image.cpp

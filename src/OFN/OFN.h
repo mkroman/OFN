@@ -82,7 +82,7 @@ public:
     /**
      * Commit a new image to the database.
      */
-    void Commit(std::vector<std::string> parameters);
+    void Commit(std::vector<std::string> parameters) noexcept;
 
     /**
      * Print the command-line usage.

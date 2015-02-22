@@ -21,6 +21,7 @@
 #include <sqlite3.h>
 
 #include "spdlog/spdlog.h"
+#include "SQLite3.h"
 
 /**
  * Forward declarations.

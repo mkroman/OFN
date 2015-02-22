@@ -21,12 +21,27 @@
 #include <vector>
 #include <memory>
 
-#include <sqlite3.h>
-
 #include "OFN/Puzzle.h"
+
+namespace SQLite3
+{
+class Connection;
+}
 
 namespace OFN
 {
+
+class RuntimeError : public std::runtime_error
+{
+public:
+    RuntimeError(const std::string& what_arg) : std::runtime_error(what_arg) {}
+};
+
+class TransactionError : public RuntimeError
+{
+public:
+    TransactionError(const std::string& what_arg) : RuntimeError(what_arg) {}
+};
 
 /* Forward declarations. */
 class Image;
@@ -66,21 +81,20 @@ public:
      *
      * @returns The inserted row ID on success, -1 otherwise.
      */
-    sqlite3_int64 SaveImage(const std::shared_ptr<Image>& image);
+    int SaveImage(const std::shared_ptr<Image>& image);
 
     /**
      * @brief Save the image signature to the database.
      *
      * @returns The inserted row ID on success, -1 otherwise.
      */
-    sqlite3_int64 SaveImageSignature(const std::shared_ptr<Image>& image,
-                                     sqlite3_int64 image_id);
+    int SaveImageSignature(const std::shared_ptr<Image>& image, int image_id);
 
     /**
      * @brief Save the image words compressed to the database.
      */
-    bool SaveImageWords(const std::shared_ptr<Image>& image,
-                        sqlite3_int64 image_id, sqlite3_int64 signature_id);
+    bool SaveImageWords(const std::shared_ptr<Image>& image, int image_id,
+                        int signature_id);
 
     /**
      * @brief Compress a list of words using PuzzleCompressedCvec.
@@ -88,6 +102,14 @@ public:
     StringVector CompressWords(const StringVector& words) const;
 
 
+public:
+    /* Getters */
+    std::shared_ptr<Puzzle::Context> GetPuzzleContext() const
+    {
+        return puzzle_;
+    }
+
+protected:
     /**
      * @brief Compute a SHA256 hash for a given file.
      *
@@ -97,16 +119,8 @@ public:
      */
     std::string SHA256File(const std::string& file) const;
 
-public:
-    /* Getters */
-    std::shared_ptr<Puzzle::Context> GetPuzzleContext() const
-    {
-        return puzzle_;
-    }
-
 private:
-    int error_;
-    std::shared_ptr<Database> db_;
+    std::shared_ptr<SQLite3::Connection> conn_;
     std::shared_ptr<Puzzle::Context> puzzle_;
 };
 

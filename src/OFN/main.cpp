@@ -45,6 +45,9 @@ static constexpr struct Application::Command Commands[] = {
 Application::Application() :
     context_(std::make_shared<Context>())
 {
+#ifndef NDEBUG
+    spdlog::set_level(spdlog::level::debug);
+#endif
 }
 
 Application::~Application()
@@ -59,7 +62,7 @@ void Application::Search(std::vector<std::string> parameters)
     console->info("Searching for similar images to `{}'", filename);
 }
 
-void Application::Commit(std::vector<std::string> parameters)
+void Application::Commit(std::vector<std::string> parameters) noexcept
 {
     auto console = spdlog::get("console");
     auto filename = parameters[0];
@@ -72,7 +75,7 @@ void Application::Commit(std::vector<std::string> parameters)
 
         context_->Commit(image);
     }
-    catch (Puzzle::RuntimeError& error)
+    catch (const Puzzle::RuntimeError& error)
     {
         console->error("Puzzle error: {}", error.what());
     }
@@ -124,8 +127,8 @@ void Application::PrintUsage(const char* executable)
 
 int main(int argc, char* argv[])
 {
-    auto app = std::make_unique<Application>();
     auto console = spdlog::get("console");
+    auto app = std::make_unique<Application>();
 
     try
     {
