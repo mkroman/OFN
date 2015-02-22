@@ -17,7 +17,7 @@
 project (OFN)
 
 # Set the minimum required version of CMake
-cmake_minimum_required (VERSION 2.6)
+cmake_minimum_required (VERSION 2.8.6)
 
 # Set CMake modules search path
 set (CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake")

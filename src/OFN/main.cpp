@@ -135,30 +135,25 @@ int main(int argc, char* argv[])
         auto parameters = app->ParseParameters(argc, argv);
 
         if (parameters.size() < 2)
-        {
-            app->PrintUsage(argv[0]);
-
-            return EXIT_SUCCESS;
-        }
-
-        auto command =
-            std::find_if(std::begin(Commands), std::end(Commands), [&](auto c) {
-                return c.name == parameters[0];
-            });
-
-        if (command != std::end(Commands))
-        {
-            /* Remove the command parameter */
-            parameters.erase(std::begin(parameters));
-
-            /* Call the associated command */
-            ((*app).*command->function)(parameters);
-        }
-        else
-        {
-            console->error("Unknown command `{}'", parameters[0]);
             return 1;
+
+        for (auto command : Commands)
+        {
+            if (parameters[0] == command.name)
+            {
+                /* Remove the command parameter */
+                parameters.erase(std::begin(parameters));
+
+                /* Call the associated command */
+                ((*app).*command.function)(parameters);
+
+                return 0;
+            }
         }
+
+        console->error("Unknown command `{}'", parameters[0]);
+
+        return 1;
     }
     catch (Application::CommandLineError& error)
     {

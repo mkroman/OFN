@@ -15,6 +15,13 @@
  * License along with this library.
  */
 
+/**
+ * @file SQLite3.h
+ * @author Mikkel Kroman <mk@maero.dk>
+ * @date 22 Feb 2015
+ * @brief C++ wrapper for the SQLite3 library.
+ */
+
 #pragma once
 
 #include <string>
@@ -25,6 +32,12 @@
 namespace SQLite3
 {
 
+/**
+ * Generic +SQLiteError class.
+ *
+ * You can use this for catching all SQLite-related exceptions, as they all
+ * derive from this class.
+ */
 class SQLiteError : public std::runtime_error
 {
 public:
@@ -34,12 +47,20 @@ public:
     }
 };
 
+/**
+ * +ConnectionError class.
+ *
+ * Thrown when there is a connection problem with the SQLite database.
+ */
 class ConnectionError : public SQLiteError
 {
 public:
     ConnectionError(const std::string& what_arg) : SQLiteError(what_arg) {}
 };
 
+/*
+ * Forward declarations.
+ */
 class PreparedStatement;
 
 /**
@@ -62,8 +83,8 @@ public:
 
         if (sqlite3_open(filename.c_str(), &result) != SQLITE_OK)
             throw ConnectionError("Failed to open database");
-        else
-            db_ = result;
+
+        db_ = result;
     }
 
     /**
@@ -78,7 +99,9 @@ public:
     }
 
     /**
-     * Return the raw sqlite3 handle.
+     * Get the raw sqlite3 handle.
+     *
+     * @returns a raw pointer to the sqlite3 opaque handle.
      */
     sqlite3* GetHandle() const
     {
@@ -99,6 +122,8 @@ public:
      * Prepare a SQL statement.
      *
      * @param sql the sql statement, utf-8 encoded.
+     *
+     * @returns a pointer to a prepared statement.
      */
     std::unique_ptr<PreparedStatement> PrepareStatement(const std::string& sql)
     {
@@ -196,33 +221,50 @@ public:
      *
      * @param index the parameter index
      * @param value the value
-     *
      */
     template <typename T>
     int Bind(int index, const T& value);
 
-    // template <typename T>
-    // int Bind(int index, const T* value, size_t size);
-
+    /**
+     * Bind a parameter with a specific size to the prepared statement.
+     *
+     * This is useful for binding blobs or other large objects.
+     *
+     * @param index the parameter index
+     * @param value a pointer to the data to bind
+     * @param size  the size of value in bytes
+     * @param transient true if sqlite should keep its own copy of value, this
+     * is needed if the content might change before the statement is evaluated.
+     *
+     * @returns SQLITE_OK on success, or an SQLite error code otherwise.
+     */
     int Bind(int index, const void* value, size_t size, bool transient = false)
     {
         return sqlite3_bind_blob(stmt_, index, value, size,
                                  transient ? SQLITE_TRANSIENT : NULL);
     }
 
-    int Step()
+    
+    /**
+     * Evaluate the prepared statement.
+     *
+     * @returns SQLITE_DONE on success, an error code otherwise.
+     */
+    int Step() const
     {
         return sqlite3_step(stmt_);
     }
 
     /**
      * Reset the prepared statement.
+     *
+     * @returns SQLITE_OK if the previous invocation of the prepared statement
+     * was successful, otherwise it returns a SQLite error code.
      */
     int Reset() const
     {
         return sqlite3_reset(stmt_);
     }
-
 
     /**
      * Get a raw pointer to the statement.

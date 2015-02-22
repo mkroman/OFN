@@ -20,9 +20,6 @@
 #include <fstream>
 
 #include <openssl/sha.h>
-#ifdef OPENSSL_NO_SHA256
-# error "OFN requires OpenSSL with SHA256 enabled"
-#endif
 
 #include "OFN/Puzzle.h"
 #include "OFN/SQLite3.h"
