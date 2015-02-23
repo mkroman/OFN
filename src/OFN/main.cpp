@@ -15,11 +15,6 @@
  * License along with this library.
  */
 
-#include <iostream>
-#include <cstdlib>
-#include <cstdio>
-#include <algorithm>
-#include <iterator>
 #include <getopt.h>
 #include <cstring>
 
@@ -59,18 +54,29 @@ void Application::Search(std::vector<std::string> parameters)
     auto console = spdlog::get("console");
     auto filename = parameters[0];
 
-    console->info("Searching for similar images to `{}'", filename);
+    try
+    {
+        console->info("Searching for images similar to '{}'", filename);
+
+        auto image = std::make_shared<OFN::Image>(context_, filename);
+
+        context_->Search(image);
+    }
+    catch (const Puzzle::RuntimeError& error)
+    {
+        console->error("Puzzle::RuntimeError: {}", error.what());
+    }
 }
 
-void Application::Commit(std::vector<std::string> parameters) noexcept
+void Application::Commit(std::vector<std::string> parameters)
 {
     auto console = spdlog::get("console");
     auto filename = parameters[0];
 
-    console->info("Comitting image `{}'", filename);
-
     try
     {
+        console->info("Comitting image '{}'", filename);
+
         auto image = std::make_shared<OFN::Image>(context_, filename);
 
         context_->Commit(image);
@@ -155,7 +161,7 @@ int main(int argc, char* argv[])
 
         return 1;
     }
-    catch (Application::CommandLineError& error)
+    catch (const Application::CommandLineError& error)
     {
         console->error("Application command-line error: {}", error.what());
     }

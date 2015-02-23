@@ -99,7 +99,7 @@ public:
     /**
      * @brief Compress a list of words using PuzzleCompressedCvec.
      */
-    StringVector CompressWords(const StringVector& words) const;
+    std::vector<std::string> CompressWords(const StringVector& words) const;
 
 
 public:

@@ -30,7 +30,7 @@ include (cotire)
 find_package (LibPuzzle REQUIRED)
 find_package (OpenSSL REQUIRED)
 
-set (CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -DSPDLOG_DEBUG_ON")
+set (CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -DSPDLOG_DEBUG_ON -DSPDLOG_TRACE_ON")
 
 # Set project variables
 set (OFN_URL "https://github.com/mkroman/ofn")

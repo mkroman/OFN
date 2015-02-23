@@ -366,6 +366,7 @@ public:
     {
         cvec_.vec =
             reinterpret_cast<signed char*>(const_cast<char*>(string.data()));
+
         cvec_.sizeof_vec = string.size();
     }
 
@@ -404,7 +405,7 @@ public:
      *
      * @return a pointer to the puzzle C context.
      */
-    inline PuzzleContext* GetPuzzleContext() const
+    PuzzleContext* GetPuzzleContext() const
     {
         return context_->GetPuzzleContext();
     }
@@ -429,6 +430,14 @@ public:
         context_(context)
     {
         puzzle_init_compressed_cvec(GetPuzzleContext(), &cvec_);
+    }
+
+    /**
+     * Destruct a compressed cvec.
+     */
+    ~CompressedCVec()
+    {
+        puzzle_free_compressed_cvec(GetPuzzleContext(), &cvec_);
     }
 
     /**

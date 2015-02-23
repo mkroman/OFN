@@ -35,7 +35,7 @@ static void print_sqlite_trace(void* data, const char* sql)
     auto console = spdlog::get("console");
     auto context = reinterpret_cast<Context*>(data);
 
-    console->trace("SQL: {}", sql);
+    SPDLOG_TRACE(console, "SQL: {}", sql);
 }
 
 Context::Context() :
@@ -52,16 +52,46 @@ Context::~Context()
 void Context::Search(const std::shared_ptr<Image>& image)
 {
     auto console = spdlog::get("console");
+    auto statement = conn_->PrepareStatement(
+        "SELECT DISTINCT(signature_id) FROM words "
+        "WHERE pos_and_word IN (?, ?, ?, ?, ?, ?, ?, ?, "
+        "?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, "
+        "?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, "
+        "?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, "
+        "?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, "
+        "?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+    auto words = CompressWords(image->GetWords());
 
-    console->info("Searching for images similar to {}", image->GetFileName());
+    for (auto i = 0; i < Image::MAX_WORDS; i++)
+    {
+        auto word = words[i];
+
+        statement->Bind(i + 1, word.data(), word.size(), true);
+    }
+
+    auto result = statement->Step();
+
+    if (result == SQLITE_ERROR)
+    {
+        SPDLOG_TRACE(console, "Step() returned SQLITE_ERROR")
+    }
+    else if (result == SQLITE_ROW)
+    {
+        auto ptr = statement->GetStatement();
+        auto signature_id = sqlite3_column_int(ptr, 0);
+
+        console->info("Got row: {:d}", signature_id);
+    }
+    else if (result == SQLITE_DONE)
+    {
+        console->debug("No results");
+    }
 }
 
 void Context::Commit(const std::shared_ptr<Image>& image)
 {
     auto console = spdlog::get("console");
     int image_id, signature_id;
-
-    console->debug("Comitting image {}", image->GetFileName());
 
     if ((image_id = SaveImage(image)) == -1)
     {
@@ -75,8 +105,7 @@ void Context::Commit(const std::shared_ptr<Image>& image)
         return;
     }
 
-    if (!conn_->Execute("BEGIN TRANSACTION"))
-        return;
+    conn_->Execute("BEGIN TRANSACTION");
 
     if (!SaveImageWords(image, image_id, signature_id))
     {
@@ -120,8 +149,9 @@ int Context::SaveImageSignature(const std::shared_ptr<Image>& image,
 {
     try
     {
-        auto stmt = conn_->PrepareStatement(
-            "INSERT INTO signatures (image_id, compressed_signature) VALUES(?, ?)");
+        auto stmt =
+            conn_->PrepareStatement("INSERT INTO signatures (image_id, "
+                                    "compressed_signature) VALUES(?, ?)");
 
         auto cvec = image->GetCvec();
         auto compressed = cvec->Compress();
@@ -155,7 +185,7 @@ bool Context::SaveImageWords(const std::shared_ptr<Image>& image, int image_id,
     {
         stmt->Reset();
         stmt->Bind(1, signature_id);
-        stmt->Bind(2, word);
+        stmt->Bind(2, word.data(), word.size());
 
         if (stmt->Step() != SQLITE_DONE)
         {
@@ -166,11 +196,10 @@ bool Context::SaveImageWords(const std::shared_ptr<Image>& image, int image_id,
     return true;
 }
 
-Context::StringVector
-Context::CompressWords(const Context::StringVector& words) const
+using StringVector = std::vector<std::string>;
+StringVector Context::CompressWords(const StringVector& words) const
 {
     Puzzle::CVec cvec(puzzle_);
-    Puzzle::CompressedCVec compressed_cvec(puzzle_);
     std::vector<std::string> result;
 
     result.reserve(words.size());
@@ -179,14 +208,13 @@ Context::CompressWords(const Context::StringVector& words) const
     for (auto word : words)
     {
         cvec.SetVec(word);
-        compressed_cvec.Compress(cvec);
+        auto compr_cvec = cvec.Compress();
 
-        result.emplace_back(reinterpret_cast<char*>(compressed_cvec.GetVec()),
-                            compressed_cvec.GetSize());
+        result.emplace_back(reinterpret_cast<char*>(compr_cvec->GetVec()),
+                            compr_cvec->GetSize());
 
-        puzzle_free_compressed_cvec(puzzle_->GetPuzzleContext(),
-                                    compressed_cvec.GetCvec());
-        
+        // puzzle_free_compressed_cvec(puzzle_->GetPuzzleContext(),
+        //                             compr_cvec.GetCvec());
     }
 
     cvec.SetVec(orig);

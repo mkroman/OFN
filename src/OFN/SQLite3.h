@@ -148,6 +148,8 @@ public:
 
     /**
      * Get the last error message.
+     *
+     * @returns the last error message.
      */
     std::string GetErrorMessage() const
     {
@@ -241,7 +243,7 @@ public:
     int Bind(int index, const void* value, size_t size, bool transient = false)
     {
         return sqlite3_bind_blob(stmt_, index, value, size,
-                                 transient ? SQLITE_TRANSIENT : NULL);
+                                 transient ? SQLITE_TRANSIENT : nullptr);
     }
 
     

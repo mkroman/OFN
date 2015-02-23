@@ -43,7 +43,7 @@ class Application
 {
 public:
     /**
-     * ArgumentError exception class.
+     * CommandLineError exception class.
      */
     class CommandLineError : public std::runtime_error
     {
@@ -82,7 +82,7 @@ public:
     /**
      * Commit a new image to the database.
      */
-    void Commit(std::vector<std::string> parameters) noexcept;
+    void Commit(std::vector<std::string> parameters);
 
     /**
      * Print the command-line usage.
