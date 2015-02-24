@@ -28,13 +28,14 @@
 #include <memory>
 #include <sqlite3.h>
 
-#include "SQLite3/Statement.h"
-#include "SQLite3/Errors.h"
+#include "OFN/SQLite3/Errors.h"
 
 namespace OFN
 {
 namespace SQLite3
 {
+
+class Statement;
 
 /**
  * +Connection class.

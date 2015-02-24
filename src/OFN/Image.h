@@ -61,14 +61,19 @@ public:
      *
      * @returns the filename.
      */
-    const std::string& GetFileName() const { return file_name_; }
+    const std::string& GetFileName() const
+    {
+        return file_name_;
+    }
 
     /**
      * Get the Cvec.
      *
      * @returns the cvec.
      */
-    auto GetCvec() { return cvec_; }
+    auto GetCvec() {
+        return cvec_;
+    }
 
 private:
     std::shared_ptr<Context> context_;

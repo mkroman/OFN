@@ -24,16 +24,23 @@
  * @author Mikkel Kroman
  */
 
+#include <string>
 #include <memory>
 
-#include "Puzzle/Errors.h"
-#include "Puzzle/Context.h"
-#include "Puzzle/CompressedCVec.h"
+extern "C" {
+#include <puzzle.h>
+}
 
 namespace OFN
 {
 namespace Puzzle
 {
+
+/*
+ * Forward declarations.
+ */
+class Context;
+class CompressedCVec;
 
 /**
  * CVec class.
@@ -46,11 +53,7 @@ public:
      *
      * @param context a pointer to a puzzle context
      */
-    CVec(std::shared_ptr<Context> context) :
-        context_(context)
-    {
-        puzzle_init_cvec(GetPuzzleContext(), &cvec_);
-    }
+    CVec(std::shared_ptr<Context> context);
 
     /**
      * Construct a cvec and fill it with bitmap data from an image file.
@@ -58,22 +61,12 @@ public:
      * @param context a pointer to a puzzle context
      * @param file    a path to a valid image file
      */
-    CVec(std::shared_ptr<Context> context, const std::string& file) :
-        context_(context)
-    {
-        puzzle_init_cvec(GetPuzzleContext(), &cvec_);
-        
-        if (!LoadFile(file))
-            throw BitmapLoadError("Could not load bitmap file");
-    }
+    CVec(std::shared_ptr<Context> context, const std::string& file);
 
     /**
      * Destruct the cvec.
      */
-    ~CVec()
-    {
-        puzzle_free_cvec(GetPuzzleContext(), &cvec_);
-    }
+    ~CVec();
 
     /**
      * Fill a cvec with bitmap data from an image file.
@@ -82,50 +75,28 @@ public:
      *
      * @returns true on success, false otherwise.
      */
-    bool LoadFile(const std::string& file)
-    {
-        return (puzzle_fill_cvec_from_file(GetPuzzleContext(), &cvec_,
-                                           file.c_str()) == 0);
-    }
+    bool LoadFile(const std::string& file);
 
     /**
      * Compress the vec and return a new compressed cvec.
      *
      * @return a pointer to a new compressed cvec.
      */
-    std::unique_ptr<CompressedCVec> Compress() const
-    {
-        auto cvec = std::make_unique<CompressedCVec>(context_);
-
-        if (puzzle_compress_cvec(GetPuzzleContext(), cvec->GetCvec(), &cvec_) !=
-            0)
-            return nullptr;
-
-        return cvec;
-    }
+    std::unique_ptr<CompressedCVec> Compress() const;
 
     /**
      * Set the vec buffer.
      *
      * @param vec the new vec buffer
      */
-    void SetVec(signed char* vec)
-    {
-        cvec_.vec = vec;
-    }
+    void SetVec(signed char* vec);
 
     /**
      * Set the vec buffer to point to a string to use as buffer.
      *
      * @param string the string to use as buffer
      */
-    void SetVec(const std::string& string)
-    {
-        cvec_.vec =
-            reinterpret_cast<signed char*>(const_cast<char*>(string.data()));
-
-        cvec_.sizeof_vec = string.size();
-    }
+    void SetVec(const std::string& string);
 
     /**
      * Get a pointer to the vec buffer.
@@ -162,10 +133,7 @@ public:
      *
      * @return a pointer to the puzzle C context.
      */
-    PuzzleContext* GetPuzzleContext() const
-    {
-        return context_->GetPuzzleContext();
-    }
+    //PuzzleContext* GetPuzzleContext() const;
 
 private:
     PuzzleCvec cvec_;
@@ -174,3 +142,4 @@ private:
 
 }
 }
+

@@ -15,30 +15,34 @@
  * License along with this library.
  */
 
-/**
- * @file Puzzle.h
- * @date 20 Feb 2015
- * @brief C++ wrapper for libpuzzle.
- * @details This is a C++ wrapper for libpuzzle.
- * @author Mikkel Kroman <mk@maero.dk>
- */
+#include <memory>
 
-#pragma once
+#include "OFN/Puzzle/CVec.h"
+#include "OFN/Puzzle/Context.h"
+#include "OFN/Puzzle/CompressedCVec.h"
 
-extern "C" {
-# include <puzzle.h>
-}
+using namespace OFN::Puzzle;
 
-#include "Puzzle/Errors.h"
-#include "Puzzle/Context.h"
-#include "Puzzle/CVec.h"
-#include "Puzzle/CompressedCVec.h"
-
-namespace OFN
-{ 
-namespace Puzzle
+CompressedCVec::CompressedCVec(std::shared_ptr<Context> context) :
+    context_(context)
 {
+}
 
 
+CompressedCVec::CompressedCVec(std::shared_ptr<Context> context, const CVec& cvec) :
+    context_(context)
+{
+    puzzle_init_compressed_cvec(GetPuzzleContext(), &cvec_);
+    puzzle_compress_cvec(GetPuzzleContext(), &cvec_, cvec.GetCvec());
 }
+
+CompressedCVec::~CompressedCVec()
+{
+    puzzle_free_compressed_cvec(GetPuzzleContext(), &cvec_);
 }
+
+PuzzleContext* CompressedCVec::GetPuzzleContext()
+{
+    return context_->GetPuzzleContext();
+}
+

@@ -22,11 +22,11 @@
 #include <openssl/sha.h>
 
 #include "SQLite3/SQLite3.h"
-#include "Puzzle/Puzzle.h"
+#include "OFN/Puzzle.h"
+
 #include "OFN/OFN.h"
 #include "OFN/Image.h"
 #include "OFN/Context.h"
-#include "OFN/Database.h"
 
 using namespace OFN;
 using namespace OFN::SQLite3;
@@ -43,7 +43,7 @@ Context::Context() :
     conn_(std::make_shared<SQLite3::Connection>("ofn.db")),
     puzzle_(std::make_shared<Puzzle::Context>())
 {
-    conn_->SetTrace(Database::print_sqlite_trace);
+    conn_->SetTrace(print_sqlite_trace);
 }
 
 Context::~Context()

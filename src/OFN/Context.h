@@ -45,7 +45,6 @@ public:
 
 /* Forward declarations. */
 class Image;
-class Database;
 
 /**
  * %Context class.

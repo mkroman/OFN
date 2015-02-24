@@ -15,11 +15,22 @@
  * License along with this library.
  */
 
-#include "OFN/Puzzle.h"
+#pragma once
 
-std::unique_ptr<Puzzle::CompressedCVec> Puzzle::CVec::Compress() const
+#include <memory>
+
+#include "Puzzle/CompressedCVec.h"
+
+/**
+ * @file CVec_impl.h
+ * @date 24 Feb 2015
+ * @brief CVec implementation.
+ * @author Mikkel Kroman
+ */
+
+std::unique_ptr<OFN::Puzzle::CompressedCVec> OFN::Puzzle::CVec::Compress() const
 {
-    auto cvec = std::make_unique<Puzzle::CompressedCVec>(context_);
+    auto cvec = std::make_unique<CompressedCVec>(context_);
 
     if (puzzle_compress_cvec(GetPuzzleContext(), cvec->GetCvec(), &cvec_) != 0)
         return nullptr;

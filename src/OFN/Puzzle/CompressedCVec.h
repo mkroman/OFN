@@ -26,13 +26,21 @@
 
 #include <memory>
 
-#include "Puzzle/Context.h"
-#include "Puzzle/CVec.h"
+extern "C" {
+#include "puzzle.h"
+}
+
+#include "OFN/Puzzle/CVec.h"
 
 namespace OFN
 {
 namespace Puzzle
 {
+
+/*
+ * Forward declarations.
+ */
+class Context;
 
 /**
  * CompressedCVec class.
@@ -45,29 +53,17 @@ public:
      *
      * @param context a pointer to a puzzle context
      */
-    CompressedCVec(std::shared_ptr<Context> context) :
-        context_(context)
-    {
-        puzzle_init_compressed_cvec(GetPuzzleContext(), &cvec_);
-    }
+    CompressedCVec(std::shared_ptr<Context> context);
 
     /**
      * Construct a new compressed cvec from a regular cvec.
      */
-    CompressedCVec(std::shared_ptr<Context> context, const CVec& cvec) :
-        context_(context)
-    {
-        puzzle_init_compressed_cvec(GetPuzzleContext(), &cvec_);
-        puzzle_compress_cvec(GetPuzzleContext(), &cvec_, cvec.GetCvec());
-    }
+    CompressedCVec(std::shared_ptr<Context> context, const CVec& cvec);
 
     /**
      * Destruct a compressed cvec.
      */
-    ~CompressedCVec()
-    {
-        puzzle_free_compressed_cvec(GetPuzzleContext(), &cvec_);
-    }
+    ~CompressedCVec();
 
     /**
      * Get a pointer to the vec buffer.
@@ -105,10 +101,7 @@ protected:
      *
      * @return a pointer to the raw puzzle C context.
      */
-    inline PuzzleContext* GetPuzzleContext()
-    {
-        return context_->GetPuzzleContext();
-    }
+    inline PuzzleContext* GetPuzzleContext();
 
 private:
     PuzzleCompressedCvec cvec_;

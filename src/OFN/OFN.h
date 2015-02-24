@@ -22,10 +22,9 @@
 #include <getopt.h>
 
 #include "spdlog/spdlog.h"
-
 #include "OFN/Puzzle.h"
+
 #include "OFN/Context.h"
-#include "OFN/Database.h"
 #include "OFN/Image.h"
 
 namespace OFN
