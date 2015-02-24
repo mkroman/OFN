@@ -85,6 +85,12 @@ public:
     void Commit(std::vector<std::string> parameters);
 
     /**
+     * Process an image, comitting if necessary and then printing similar
+     * images.
+     */
+    void Process(std::vector<std::string> parameters);
+
+    /**
      * Print the command-line usage.
      */
     void PrintUsage(const char* executable);

@@ -21,14 +21,15 @@
 
 #include <openssl/sha.h>
 
-#include "OFN/Puzzle.h"
-#include "OFN/SQLite3.h"
+#include "SQLite3/SQLite3.h"
+#include "Puzzle/Puzzle.h"
 #include "OFN/OFN.h"
 #include "OFN/Image.h"
 #include "OFN/Context.h"
 #include "OFN/Database.h"
 
 using namespace OFN;
+using namespace OFN::SQLite3;
 
 static void print_sqlite_trace(void* data, const char* sql)
 {
@@ -52,7 +53,7 @@ Context::~Context()
 void Context::Search(const std::shared_ptr<Image>& image)
 {
     auto console = spdlog::get("console");
-    auto statement = conn_->PrepareStatement(
+    auto statement = conn_->Prepare(
         "SELECT DISTINCT(signature_id) FROM words "
         "WHERE pos_and_word IN (?, ?, ?, ?, ?, ?, ?, ?, "
         "?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, "
@@ -69,22 +70,33 @@ void Context::Search(const std::shared_ptr<Image>& image)
         statement->Bind(i + 1, word.data(), word.size(), true);
     }
 
-    auto result = statement->Step();
+    auto signature_statement =
+        conn_->Prepare("SELECT image_id, compressed_signature FROM "
+                                "signatures WHERE(id = ?)");
 
-    if (result == SQLITE_ERROR)
-    {
-        SPDLOG_TRACE(console, "Step() returned SQLITE_ERROR")
-    }
-    else if (result == SQLITE_ROW)
-    {
-        auto ptr = statement->GetStatement();
-        auto signature_id = sqlite3_column_int(ptr, 0);
+    if (!signature_statement)
+        console->error("Error when preparing statement: {}",
+                       conn_->GetErrorMessage());
 
-        console->info("Got row: {:d}", signature_id);
-    }
-    else if (result == SQLITE_DONE)
+    while (auto row = statement->Step())
     {
-        console->debug("No results");
+        auto signature_id = row.GetInt64(0);
+
+        console->info("Got row with id {:d}", signature_id);
+        signature_statement->Reset();
+        signature_statement->Bind(1, signature_id);
+        
+        auto signature_row = signature_statement->Step();
+
+        if (signature_row)
+        {
+            auto image_id = signature_row.GetInt64(0);
+            auto signature = signature_row.GetBlob(1);
+
+            console->info("Signature id matches image id {:d}, and has a "
+                          "signature of size {:d}",
+                          image_id, signature.size());
+        }
     }
 }
 
@@ -121,15 +133,16 @@ int Context::SaveImage(const std::shared_ptr<Image>& image)
 
     try
     {
-        auto stmt = conn_->PrepareStatement(
+        auto stmt = conn_->Prepare(
             "INSERT INTO images (filename, digest) VALUES (?, ?)");
 
         auto digest = SHA256File(image->GetFileName());
 
         stmt->Bind(1, image->GetFileName());
         stmt->Bind(2, digest.data(), digest.size());
+        stmt->Step();
 
-        if (stmt->Step() != SQLITE_DONE)
+        if (!stmt->IsDone())
         {
             console->trace("SQL Step failed: {}", conn_->GetErrorMessage());
 
@@ -149,17 +162,17 @@ int Context::SaveImageSignature(const std::shared_ptr<Image>& image,
 {
     try
     {
-        auto stmt =
-            conn_->PrepareStatement("INSERT INTO signatures (image_id, "
-                                    "compressed_signature) VALUES(?, ?)");
+        auto stmt = conn_->Prepare("INSERT INTO signatures (image_id, "
+                                   "compressed_signature) VALUES(?, ?)");
 
         auto cvec = image->GetCvec();
         auto compressed = cvec->Compress();
 
         stmt->Bind(1, image_id);
         stmt->Bind(2, compressed->GetVec(), compressed->GetSize());
+        stmt->Step();
 
-        if (stmt->Step() != SQLITE_DONE)
+        if (!stmt->IsDone())
         {
             return -1;
         }
@@ -176,7 +189,8 @@ bool Context::SaveImageWords(const std::shared_ptr<Image>& image, int image_id,
                              int signature_id)
 {
     (void)image_id;
-    auto stmt = conn_->PrepareStatement(
+    auto console = spdlog::get("console");
+    auto stmt = conn_->Prepare(
         "INSERT INTO words (signature_id, pos_and_word) VALUES(?, ?)");
 
     auto words = CompressWords(image->GetWords());
@@ -186,10 +200,12 @@ bool Context::SaveImageWords(const std::shared_ptr<Image>& image, int image_id,
         stmt->Reset();
         stmt->Bind(1, signature_id);
         stmt->Bind(2, word.data(), word.size());
+        stmt->Step();
 
-        if (stmt->Step() != SQLITE_DONE)
+        if (!stmt->IsDone())
         {
-            Console->error("Failed to insert word: {}", conn_->GetErrorMessage());
+            console->error("Failed to insert word: {}",
+                           conn_->GetErrorMessage());
         }
     }
 

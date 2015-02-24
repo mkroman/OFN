@@ -20,9 +20,21 @@
 using namespace SQLite3;
 
 template <>
-int PreparedStatement::Bind<int>(int index, const int& value)
+int PreparedStatement::Bind<int64_t>(int index, const int64_t& value)
 {
     return sqlite3_bind_int64(stmt_, index, value);
+}
+
+template <>
+int PreparedStatement::Bind<int>(int index, const int& value)
+{
+    return sqlite3_bind_int(stmt_, index, value);
+}
+
+template <>
+int PreparedStatement::Bind<double>(int index, const double& value)
+{
+    return sqlite3_bind_double(stmt_, index, value);
 }
 
 template<>
@@ -30,5 +42,3 @@ int PreparedStatement::Bind<std::string>(int index, const std::string& value)
 {
     return sqlite3_bind_text(stmt_, index, value.data(), value.size(), NULL);
 }
-
-

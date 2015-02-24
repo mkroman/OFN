@@ -15,29 +15,48 @@
  * License along with this library.
  */
 
-/**
- * @file Puzzle.h
- * @date 20 Feb 2015
- * @brief C++ wrapper for libpuzzle.
- * @details This is a C++ wrapper for libpuzzle.
- * @author Mikkel Kroman <mk@maero.dk>
- */
-
 #pragma once
 
+/**
+ * @file Errors.h
+ * @author Mikkel Kroman
+ * @date 24 Feb 2015
+ * @brief Runtime error classes for the sqlite3 wrapper.
+ */
+
+#include <string>
 #include <stdexcept>
-#include <memory>
 
-extern "C" {
-# include <puzzle.h>
-}
-
-namespace Puzzle
+namespace OFN
+{
+namespace SQLite3
 {
 
-class CompressedCVec;
+/**
+ * Generic +SQLiteError class.
+ *
+ * You can use this for catching all SQLite-related exceptions, as they all
+ * derive from this class.
+ */
+class SQLiteError : public std::runtime_error
+{
+public:
+    SQLiteError(const std::string& what_arg) :
+        std::runtime_error(what_arg)
+    {
+    }
+};
 
-
+/**
+ * +ConnectionError class.
+ *
+ * Thrown when there is a connection problem with the SQLite database.
+ */
+class ConnectionError : public SQLiteError
+{
+public:
+    ConnectionError(const std::string& what_arg) : SQLiteError(what_arg) {}
+};
 
 }
-
+}

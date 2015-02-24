@@ -25,19 +25,20 @@
 
 #pragma once
 
-#include <stdexcept>
-#include <memory>
-
 extern "C" {
 # include <puzzle.h>
 }
 
+#include "Puzzle/Errors.h"
+#include "Puzzle/Context.h"
+#include "Puzzle/CVec.h"
+#include "Puzzle/CompressedCVec.h"
+
+namespace OFN
+{ 
 namespace Puzzle
 {
 
-class CompressedCVec;
-
-
 
 }
-
+}

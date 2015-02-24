@@ -16,28 +16,25 @@
  */
 
 /**
- * @file Puzzle.h
- * @date 20 Feb 2015
- * @brief C++ wrapper for libpuzzle.
- * @details This is a C++ wrapper for libpuzzle.
+ * @file SQLite3.h
  * @author Mikkel Kroman <mk@maero.dk>
+ * @date 22 Feb 2015
+ * @brief C++ wrapper for the SQLite3 library.
  */
 
 #pragma once
 
-#include <stdexcept>
-#include <memory>
+#include <sqlite3.h>
 
-extern "C" {
-# include <puzzle.h>
-}
+#include "SQLite3/Connection.h"
+#include "SQLite3/Statement.h"
+#include "SQLite3/Row.h"
+#include "SQLite3/Errors.h"
 
-namespace Puzzle
+namespace OFN
+{
+namespace SQLite3
 {
 
-class CompressedCVec;
-
-
-
 }
-
+}

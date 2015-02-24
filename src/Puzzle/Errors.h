@@ -15,29 +15,49 @@
  * License along with this library.
  */
 
-/**
- * @file Puzzle.h
- * @date 20 Feb 2015
- * @brief C++ wrapper for libpuzzle.
- * @details This is a C++ wrapper for libpuzzle.
- * @author Mikkel Kroman <mk@maero.dk>
- */
-
 #pragma once
 
+/**
+ * @file Errors.h
+ * @date 24 Feb 2015
+ * @brief Error classes for libpuzzle. 
+ * @author Mikkel Kroman
+ */
+
+#include <string>
 #include <stdexcept>
-#include <memory>
 
-extern "C" {
-# include <puzzle.h>
-}
-
+namespace OFN
+{
 namespace Puzzle
 {
 
-class CompressedCVec;
+
+/**
+ * Runtime error class.
+ */
+class RuntimeError : public std::runtime_error
+{
+public:
+    /**
+     * Construct a new runtime error with a +what+ argument.
+     */
+    RuntimeError(const std::string& what_arg) : std::runtime_error(what_arg) {}
+};
+
+/**
+ * Bitmap load error class.
+ */
+class BitmapLoadError : public RuntimeError
+{
+public:
+    /**
+     * Construct a new bitmap load error with a +what+ argument.
+     */
+    BitmapLoadError(const std::string& what_arg) : RuntimeError(what_arg) {}
+};
 
 
 
 }
-
+}

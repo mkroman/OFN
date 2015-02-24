@@ -33,8 +33,9 @@ static constexpr struct option CommandLineOptions[] = {
 
 /** Command-line command arguments. */
 static constexpr struct Application::Command Commands[] = {
-    { "commit", &Application::Commit },
-    { "search", &Application::Search }
+    { "commit",  &Application::Commit },
+    { "search",  &Application::Search },
+    { "process", &Application::Process }
 };
 
 Application::Application() :
@@ -52,38 +53,57 @@ Application::~Application()
 void Application::Search(std::vector<std::string> parameters)
 {
     auto console = spdlog::get("console");
-    auto filename = parameters[0];
 
-    try
+    for (auto filename : parameters)
     {
-        console->info("Searching for images similar to '{}'", filename);
+        try
+        {
+            console->info("Searching for images similar to '{}'", filename);
 
-        auto image = std::make_shared<OFN::Image>(context_, filename);
+            auto image = std::make_shared<OFN::Image>(context_, filename);
 
-        context_->Search(image);
-    }
-    catch (const Puzzle::RuntimeError& error)
-    {
-        console->error("Puzzle::RuntimeError: {}", error.what());
+            context_->Search(image);
+        }
+        catch (const Puzzle::RuntimeError& error)
+        {
+            console->error("Puzzle::RuntimeError: {}", error.what());
+        }
     }
 }
 
 void Application::Commit(std::vector<std::string> parameters)
 {
     auto console = spdlog::get("console");
+
+    for (auto filename : parameters)
+    {
+        try
+        {
+            console->info("Comitting image '{}'", filename);
+
+            auto image = std::make_shared<OFN::Image>(context_, filename);
+
+            context_->Commit(image);
+        }
+        catch (const Puzzle::RuntimeError& error)
+        {
+            console->error("Puzzle error: {}", error.what());
+        }
+    }
+}
+
+void Application::Process(std::vector<std::string> parameters)
+{
+    auto console = spdlog::get("console");
     auto filename = parameters[0];
 
     try
     {
-        console->info("Comitting image '{}'", filename);
-
         auto image = std::make_shared<OFN::Image>(context_, filename);
-
-        context_->Commit(image);
     }
     catch (const Puzzle::RuntimeError& error)
     {
-        console->error("Puzzle error: {}", error.what());
+        console->error("Puzzle::RuntimeError: {}", error.what());
     }
 }
 

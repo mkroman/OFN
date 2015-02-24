@@ -131,9 +131,7 @@ public:
 
         if (sqlite3_prepare_v2(db_, sql.c_str(), sql.size(), &result, NULL) !=
             SQLITE_OK)
-        {
-            throw ConnectionError("SQL statement preperation failed");
-        }
+            return nullptr;
 
         return std::make_unique<PreparedStatement>(result);
     }
@@ -170,8 +168,126 @@ private:
     sqlite3* db_;
 };
 
-template <class T>
-struct Bindable;
+/**
+ * +Data class.
+ */
+class Data
+{
+public:
+    Data(const char* data, size_t size) :
+        size_(size),
+        data_(data)
+    {
+    }
+
+    Data(Data&& data) :
+        size_(data.size_),
+        data_(data.data_)
+    {
+    }
+
+    const char* data() const
+    {
+        return data_;
+    }
+
+    size_t size() const
+    {
+        return size_;
+    }
+    
+private:
+    size_t size_;
+    const char* data_;
+};
+
+/**
+ * +Row class.
+ */
+class Row
+{
+public:
+    Row() :
+        stmt_(nullptr) 
+    {
+    }
+
+    /**
+     * Constructor from a sqlite3 statement pointer.
+     */
+    Row(sqlite3_stmt* stmt) :
+        stmt_(stmt),
+        num_columns_(sqlite3_column_count(stmt))
+    {
+    }
+
+    /**
+     * Move constructor.
+     */
+    Row(Row&& row) :
+        stmt_(row.stmt_),
+        num_columns_(row.num_columns_)
+    {
+    }
+
+    /**
+     * Support the bool operator.
+     */
+    operator bool() const
+    {
+        return stmt_ != nullptr;
+    }
+
+    /**
+     * Get the column type.
+     */
+    int GetType(int index) const
+    {
+        return sqlite3_column_type(stmt_, index);
+    }
+
+    /**
+     * Get the value of a column as an integer.
+     */
+    int GetInt(int index) const
+    {
+        return sqlite3_column_int(stmt_, index);
+    }
+
+    /**
+     * Get the value of a column as a 64-bit integer.
+     */
+    int GetInt64(int index) const
+    {
+        return sqlite3_column_int64(stmt_, index);
+    }
+
+    /**
+     * Get the value of a column as a string.
+     */
+    Data GetText(int index) const
+    {
+        auto size = sqlite3_column_bytes(stmt_, index);
+        auto text = sqlite3_column_text(stmt_, index);
+
+        return Data(reinterpret_cast<const char*>(text), size);
+    }
+
+    /**
+     * Get the value of a column as a blob.
+     */
+    Data GetBlob(int index) const
+    {
+        auto size = sqlite3_column_bytes(stmt_, index);
+        auto blob = sqlite3_column_blob(stmt_, index);
+
+        return Data(reinterpret_cast<const char*>(blob), size);
+    }
+
+private:
+    sqlite3_stmt* stmt_;
+    int num_columns_;
+};
 
 class PreparedStatement
 {
@@ -185,17 +301,14 @@ public:
      * @throws ConnectionError if prepaing the statment fails.
      */
     PreparedStatement(const Connection& connection, const std::string& sql) :
+        state_(0),
         stmt_(nullptr)
     {
         sqlite3_stmt* result;
 
         if (sqlite3_prepare_v2(connection.GetHandle(), sql.c_str(), sql.size(),
-                               &result, NULL) != SQLITE_OK)
-        {
-            throw ConnectionError("SQL statement preperation failed");
-        }
-
-        stmt_ = result;
+                               &result, NULL) == SQLITE_OK)
+            stmt_ = result;
     }
 
     /**
@@ -205,6 +318,7 @@ public:
      * @param stmt raw pointer to a sqlite3 statement type
      */
     PreparedStatement(sqlite3_stmt* const stmt) :
+        state_(0),
         stmt_(stmt)
     {
     }
@@ -216,6 +330,14 @@ public:
     {
         if (stmt_ != nullptr)
             sqlite3_finalize(stmt_);
+    }
+    
+    /**
+     * Bool operator for checking if the preparation failed.
+     */
+    operator bool() const
+    {
+        return stmt_ != nullptr;
     }
 
     /**
@@ -245,16 +367,20 @@ public:
         return sqlite3_bind_blob(stmt_, index, value, size,
                                  transient ? SQLITE_TRANSIENT : nullptr);
     }
-
     
     /**
      * Evaluate the prepared statement.
      *
-     * @returns SQLITE_DONE on success, an error code otherwise.
+     * @returns a row.
      */
-    int Step() const
+    Row Step()
     {
-        return sqlite3_step(stmt_);
+        state_ = sqlite3_step(stmt_);
+
+        if (state_ == SQLITE_ROW)
+            return Row(stmt_);
+        else
+            return Row();
     }
 
     /**
@@ -263,7 +389,7 @@ public:
      * @returns SQLITE_OK if the previous invocation of the prepared statement
      * was successful, otherwise it returns a SQLite error code.
      */
-    int Reset() const
+    int Reset()
     {
         return sqlite3_reset(stmt_);
     }
@@ -278,7 +404,18 @@ public:
         return stmt_;
     }
 
+    bool IsDone() const
+    {
+        return (state_ == SQLITE_DONE);
+    }
+
+    bool HasRow() const
+    {
+        return (state_ == SQLITE_ROW);
+    }
+
 protected:
+    int state_;
     sqlite3_stmt* stmt_;
 };
 
