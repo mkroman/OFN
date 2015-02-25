@@ -42,6 +42,8 @@ set (ofn_SOURCE
   src/OFN/Context.cpp
   src/OFN/Image.cpp
   src/OFN/Puzzle/CVec.cpp
+  src/OFN/Puzzle/CompressedCVec.cpp
+  src/OFN/SQLite3/Statement.cpp
 )
 
 set_property (DIRECTORY

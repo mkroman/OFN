@@ -26,8 +26,8 @@
 
 #include <sqlite3.h>
 
-#include "SQLite3/Connection.h"
-#include "SQLite3/Row.h"
+#include "OFN/SQLite3/Connection.h"
+#include "OFN/SQLite3/Row.h"
 
 namespace OFN
 {

@@ -26,10 +26,10 @@
 
 #include <sqlite3.h>
 
-#include "SQLite3/Connection.h"
-#include "SQLite3/Statement.h"
-#include "SQLite3/Row.h"
-#include "SQLite3/Errors.h"
+#include "OFN/SQLite3/Connection.h"
+#include "OFN/SQLite3/Statement.h"
+#include "OFN/SQLite3/Row.h"
+#include "OFN/SQLite3/Errors.h"
 
 namespace OFN
 {

@@ -15,25 +15,30 @@
  * License along with this library.
  */
 
-#pragma once
+#include "OFN/SQLite3/Statement.h"
 
-#include <memory>
+using namespace OFN::SQLite3;
 
-#include "Puzzle/CompressedCVec.h"
-
-/**
- * @file CVec_impl.h
- * @date 24 Feb 2015
- * @brief CVec implementation.
- * @author Mikkel Kroman
- */
-
-std::unique_ptr<OFN::Puzzle::CompressedCVec> OFN::Puzzle::CVec::Compress() const
+template <>
+int Statement::Bind<int64_t>(int index, const int64_t& value)
 {
-    auto cvec = std::make_unique<CompressedCVec>(context_);
+    return sqlite3_bind_int64(stmt_, index, value);
+}
 
-    if (puzzle_compress_cvec(GetPuzzleContext(), cvec->GetCvec(), &cvec_) != 0)
-        return nullptr;
+template <>
+int Statement::Bind<int>(int index, const int& value)
+{
+    return sqlite3_bind_int(stmt_, index, value);
+}
 
-    return cvec;
+template <>
+int Statement::Bind<double>(int index, const double& value)
+{
+    return sqlite3_bind_double(stmt_, index, value);
+}
+
+template<>
+int Statement::Bind<std::string>(int index, const std::string& value)
+{
+    return sqlite3_bind_text(stmt_, index, value.data(), value.size(), NULL);
 }
