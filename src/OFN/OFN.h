@@ -32,8 +32,10 @@ namespace OFN
 
 /** The current application version. */
 static const char* Version = "0.1.1";
+static const double SimilarityThreshold = 0.6;
 
 static auto Console = spdlog::stdout_logger_mt("console");
+
 
 /**
  * Application class for wrapping runtime functionality into an object.

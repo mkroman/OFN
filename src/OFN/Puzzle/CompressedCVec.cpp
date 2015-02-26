@@ -26,19 +26,33 @@ using namespace OFN::Puzzle;
 CompressedCVec::CompressedCVec(std::shared_ptr<Context> context) :
     context_(context)
 {
+    puzzle_init_compressed_cvec(context_->GetPuzzleContext(), &cvec_);
 }
 
-
-CompressedCVec::CompressedCVec(std::shared_ptr<Context> context, const CVec& cvec) :
+CompressedCVec::CompressedCVec(std::shared_ptr<Context> context, char* vec,
+                               size_t size) :
     context_(context)
 {
-    puzzle_init_compressed_cvec(GetPuzzleContext(), &cvec_);
-    puzzle_compress_cvec(GetPuzzleContext(), &cvec_, cvec.GetCvec());
+    puzzle_init_compressed_cvec(context_->GetPuzzleContext(), &cvec_);
+
+    cvec_.vec = reinterpret_cast<unsigned char*>(vec);
+    cvec_.sizeof_compressed_vec = size;
 }
 
 CompressedCVec::~CompressedCVec()
 {
-    puzzle_free_compressed_cvec(GetPuzzleContext(), &cvec_);
+    puzzle_free_compressed_cvec(context_->GetPuzzleContext(), &cvec_);
+}
+
+std::unique_ptr<CVec> CompressedCVec::Uncompress() const
+{
+    auto cvec = std::make_unique<CVec>(context_);
+    auto puzzle_ctx = context_->GetPuzzleContext();
+
+    if (puzzle_uncompress_cvec(puzzle_ctx, &cvec_, &cvec->cvec_) != 0)
+        return nullptr;
+
+    return cvec;
 }
 
 PuzzleContext* CompressedCVec::GetPuzzleContext()

@@ -19,6 +19,11 @@
 
 using namespace OFN::SQLite3;
 
+namespace OFN
+{
+namespace SQLite3
+{
+
 template <>
 int Statement::Bind<int64_t>(int index, const int64_t& value)
 {
@@ -41,4 +46,7 @@ template<>
 int Statement::Bind<std::string>(int index, const std::string& value)
 {
     return sqlite3_bind_text(stmt_, index, value.data(), value.size(), NULL);
+}
+
+}
 }

@@ -47,6 +47,7 @@ class Context;
  */
 class CompressedCVec
 {
+    friend class CVec;
 public:
     /**
      * Construct a new compressed cvec.
@@ -56,14 +57,19 @@ public:
     CompressedCVec(std::shared_ptr<Context> context);
 
     /**
-     * Construct a new compressed cvec from a regular cvec.
+     * Construct a compressed cvec with a vec buffer and size.
      */
-    CompressedCVec(std::shared_ptr<Context> context, const CVec& cvec);
+    CompressedCVec(std::shared_ptr<Context> context, char* vec, size_t size);
 
     /**
      * Destruct a compressed cvec.
      */
     ~CompressedCVec();
+
+    /**
+     * Uncompress[sic] the compressed vector.
+     */
+    std::unique_ptr<CVec> Uncompress() const;
 
     /**
      * Get a pointer to the vec buffer.
@@ -93,6 +99,15 @@ public:
     PuzzleCompressedCvec* GetCvec()
     {
         return &cvec_;
+    }
+
+    /**
+     * Set the vector buffer.
+     */
+    void SetVec(char* vec, size_t size)
+    {
+        cvec_.vec = reinterpret_cast<unsigned char*>(vec);
+        cvec_.sizeof_compressed_vec = size;
     }
 
 protected:

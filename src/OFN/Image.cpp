@@ -53,3 +53,7 @@ std::vector<std::string> Image::GetWords() const
     return words;
 }
 
+double Image::Compare(const Puzzle::CVec& cvec) const
+{
+    return cvec_->GetDistance(cvec);
+}

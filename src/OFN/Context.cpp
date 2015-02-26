@@ -29,12 +29,11 @@
 #include "OFN/Context.h"
 
 using namespace OFN;
-using namespace OFN::SQLite3;
 
-static void print_sqlite_trace(void* data, const char* sql)
+static void print_sqlite_trace(void* context, const char* sql)
 {
+    (void)context;
     auto console = spdlog::get("console");
-    auto context = reinterpret_cast<Context*>(data);
 
     SPDLOG_TRACE(console, "SQL: {}", sql);
 }
@@ -53,6 +52,7 @@ Context::~Context()
 void Context::Search(const Image& image)
 {
     auto console = spdlog::get("console");
+    auto words = CompressWords(image.GetWords());
     auto statement = conn_->Prepare(
         "SELECT DISTINCT(signature_id) FROM words "
         "WHERE pos_and_word IN (?, ?, ?, ?, ?, ?, ?, ?, "
@@ -61,12 +61,10 @@ void Context::Search(const Image& image)
         "?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, "
         "?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, "
         "?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-    auto words = CompressWords(image.GetWords());
 
     for (auto i = 0; i < Image::MAX_WORDS; i++)
     {
         auto word = words[i];
-
         statement->Bind(i + 1, word.data(), word.size(), true);
     }
 
@@ -74,29 +72,53 @@ void Context::Search(const Image& image)
         conn_->Prepare("SELECT image_id, compressed_signature FROM "
                        "signatures WHERE(id = ?)");
 
-    if (!signature_statement)
+    auto image_statement =
+        conn_->Prepare("SELECT digest, filename FROM images WHERE(id = ?)");
+
+    if (!signature_statement || !image_statement)
         console->error("Error when preparing statement: {}",
                        conn_->GetErrorMessage());
 
-    while (auto row = statement->Step())
+    // Iterate over each row.
+    while (auto words_row = statement->Step())
     {
-        auto signature_id = row.GetInt64(0);
+        auto signature_id = words_row.GetInt64(0);
 
         console->info("Got row with id {:d}", signature_id);
-        signature_statement->Reset();
+
+        // Find the associated signature by id.
         signature_statement->Bind(1, signature_id);
         
-        auto signature_row = signature_statement->Step();
-
-        if (signature_row)
+        if (auto signature_row = signature_statement->Step())
         {
             auto image_id = signature_row.GetInt64(0);
             auto signature = signature_row.GetBlob(1);
 
-            console->info("Signature id matches image id {:d}, and has a "
-                          "signature of size {:d}",
-                          image_id, signature.size());
+            // Find the associated image by id.
+            image_statement->Bind(1, image_id);
+
+            if (auto image_row = image_statement->Step())
+            {
+                auto digest = image_row.GetBlob(0);
+                auto filename = image_row.GetText(1);
+                auto uncompressed = Puzzle::CVecFromCompressedBuffer(
+                    puzzle_, signature.data(), signature.size());
+                auto distance = image.Compare(*uncompressed.get());
+
+                console->debug("Found matching image '{}'", filename.data());
+
+                if (distance < SimilarityThreshold)
+                {
+                    console->debug(
+                        "The images are similar! normalized distance: {}",
+                        distance);
+                }
+            }
+
+            image_statement->Reset();
         }
+
+        signature_statement->Reset();
     }
 }
 
@@ -107,7 +129,7 @@ void Context::Commit(const Image& image)
 
     if ((image_id = SaveImage(image)) == -1)
     {
-        Console->error("SaveImage returned -1");
+        console->error("SaveImage returned -1");
         return;
     }
 
@@ -133,16 +155,16 @@ int Context::SaveImage(const Image& image)
 
     try
     {
-        auto stmt = conn_->Prepare(
+        auto statement = conn_->Prepare(
             "INSERT INTO images (filename, digest) VALUES (?, ?)");
 
         auto digest = SHA256File(image.GetFileName());
 
-        stmt->Bind(1, image.GetFileName());
-        stmt->Bind(2, digest.data(), digest.size());
-        stmt->Step();
+        statement->Bind(1, image.GetFileName()); // filename
+        statement->Bind(2, digest.data(), digest.size()); // digest
+        statement->Step();
 
-        if (!stmt->IsDone())
+        if (!statement->IsDone())
         {
             console->trace("SQL Step failed: {}", conn_->GetErrorMessage());
 
@@ -161,17 +183,17 @@ int Context::SaveImageSignature(const Image& image, int image_id)
 {
     try
     {
-        auto stmt = conn_->Prepare("INSERT INTO signatures (image_id, "
+        auto statement = conn_->Prepare("INSERT INTO signatures (image_id, "
                                    "compressed_signature) VALUES(?, ?)");
 
         auto cvec = image.GetCvec();
         auto compressed = cvec->Compress();
 
-        stmt->Bind(1, image_id);
-        stmt->Bind(2, compressed->GetVec(), compressed->GetSize());
-        stmt->Step();
+        statement->Bind(1, image_id);
+        statement->Bind(2, compressed->GetVec(), compressed->GetSize());
+        statement->Step();
 
-        if (!stmt->IsDone())
+        if (!statement->IsDone())
         {
             return -1;
         }
@@ -188,19 +210,19 @@ bool Context::SaveImageWords(const Image& image, int image_id, int signature_id)
 {
     (void)image_id;
     auto console = spdlog::get("console");
-    auto stmt = conn_->Prepare(
+    auto statement = conn_->Prepare(
         "INSERT INTO words (signature_id, pos_and_word) VALUES(?, ?)");
 
     auto words = CompressWords(image.GetWords());
 
     for (auto word : words)
     {
-        stmt->Reset();
-        stmt->Bind(1, signature_id);
-        stmt->Bind(2, word.data(), word.size());
-        stmt->Step();
+        statement->Reset();
+        statement->Bind(1, signature_id);
+        statement->Bind(2, word.data(), word.size());
+        statement->Step();
 
-        if (!stmt->IsDone())
+        if (!statement->IsDone())
         {
             console->error("Failed to insert word: {}",
                            conn_->GetErrorMessage());
@@ -217,7 +239,6 @@ StringVector Context::CompressWords(const StringVector& words) const
     std::vector<std::string> result;
 
     result.reserve(words.size());
-    signed char* orig = cvec.GetVec();
 
     for (auto word : words)
     {
@@ -226,12 +247,11 @@ StringVector Context::CompressWords(const StringVector& words) const
 
         result.emplace_back(reinterpret_cast<char*>(compr_cvec->GetVec()),
                             compr_cvec->GetSize());
-
-        // puzzle_free_compressed_cvec(puzzle_->GetPuzzleContext(),
-        //                             compr_cvec.GetCvec());
     }
 
-    cvec.SetVec(orig);
+    // Avoid having the destructor free the vector buffer seeing as we don't
+    // have ownership of it.
+    cvec.SetVec(nullptr, 0);
 
     return result;
 }

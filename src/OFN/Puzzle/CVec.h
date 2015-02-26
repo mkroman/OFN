@@ -42,11 +42,13 @@ namespace Puzzle
 class Context;
 class CompressedCVec;
 
+
 /**
  * CVec class.
  */
 class CVec
 {
+    friend class CompressedCVec;
 public:
     /**
      * Construct an empty cvec.
@@ -89,7 +91,7 @@ public:
      *
      * @param vec the new vec buffer
      */
-    void SetVec(signed char* vec);
+    void SetVec(signed char* vec, size_t size);
 
     /**
      * Set the vec buffer to point to a string to use as buffer.
@@ -129,6 +131,11 @@ public:
     }
 
     /**
+     * Compare two vectors and return the normalized distance.
+     */
+    double GetDistance(const CVec& other) const;
+
+    /**
      * Get the raw puzzle C context.
      *
      * @return a pointer to the puzzle C context.
@@ -140,6 +147,15 @@ private:
     std::shared_ptr<Context> context_;
 };
 
+/**
+ * Get a decompressed cvec from a compressed vector buffer with a specified
+ * size.
+ *
+ * @returns a unique pointer to a heap allocated cvec.
+ */
+std::unique_ptr<CVec>
+CVecFromCompressedBuffer(std::shared_ptr<Context>& context, const char* vector,
+                         size_t size);
 }
 }
 

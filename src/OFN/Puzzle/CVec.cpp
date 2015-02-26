@@ -55,17 +55,18 @@ bool CVec::LoadFile(const std::string& file)
 std::unique_ptr<CompressedCVec> CVec::Compress() const
 {
     auto cvec = std::make_unique<CompressedCVec>(context_);
+    auto puzzle_ctx = context_->GetPuzzleContext();
 
-    if (puzzle_compress_cvec(context_->GetPuzzleContext(), cvec->GetCvec(),
-                             &cvec_) != 0)
+    if (puzzle_compress_cvec(puzzle_ctx, &cvec->cvec_, &cvec_) != 0)
         return nullptr;
 
     return cvec;
 }
 
-void CVec::SetVec(signed char* vec)
+void CVec::SetVec(signed char* vec, size_t size)
 {
     cvec_.vec = vec;
+    cvec_.sizeof_vec = size;
 }
 
 void CVec::SetVec(const std::string& string)
@@ -76,4 +77,22 @@ void CVec::SetVec(const std::string& string)
     cvec_.sizeof_vec = string.size();
 }
 
+double CVec::GetDistance(const CVec& other) const
+{
+    return puzzle_vector_normalized_distance(context_->GetPuzzleContext(),
+                                             &cvec_, &other.cvec_, 0);
+}
+
+std::unique_ptr<CVec>
+OFN::Puzzle::CVecFromCompressedBuffer(std::shared_ptr<Context>& context,
+                                      const char* vector, size_t size)
+{
+    auto compressed = CompressedCVec{context, const_cast<char*>(vector), size};
+    auto uncompressed = compressed.Uncompress();
+
+    // Avoid having the destructor deallocate the buffer.
+    compressed.SetVec(nullptr, 0);
+
+    return uncompressed;
+}
 
