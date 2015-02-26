@@ -50,7 +50,7 @@ Context::~Context()
 {
 }
 
-void Context::Search(const std::shared_ptr<Image>& image)
+void Context::Search(const Image& image)
 {
     auto console = spdlog::get("console");
     auto statement = conn_->Prepare(
@@ -61,7 +61,7 @@ void Context::Search(const std::shared_ptr<Image>& image)
         "?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, "
         "?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, "
         "?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-    auto words = CompressWords(image->GetWords());
+    auto words = CompressWords(image.GetWords());
 
     for (auto i = 0; i < Image::MAX_WORDS; i++)
     {
@@ -72,7 +72,7 @@ void Context::Search(const std::shared_ptr<Image>& image)
 
     auto signature_statement =
         conn_->Prepare("SELECT image_id, compressed_signature FROM "
-                                "signatures WHERE(id = ?)");
+                       "signatures WHERE(id = ?)");
 
     if (!signature_statement)
         console->error("Error when preparing statement: {}",
@@ -100,7 +100,7 @@ void Context::Search(const std::shared_ptr<Image>& image)
     }
 }
 
-void Context::Commit(const std::shared_ptr<Image>& image)
+void Context::Commit(const Image& image)
 {
     auto console = spdlog::get("console");
     int image_id, signature_id;
@@ -127,7 +127,7 @@ void Context::Commit(const std::shared_ptr<Image>& image)
     conn_->Execute("END TRANSACTION");
 }
 
-int Context::SaveImage(const std::shared_ptr<Image>& image)
+int Context::SaveImage(const Image& image)
 {
     auto console = spdlog::get("console");
 
@@ -136,9 +136,9 @@ int Context::SaveImage(const std::shared_ptr<Image>& image)
         auto stmt = conn_->Prepare(
             "INSERT INTO images (filename, digest) VALUES (?, ?)");
 
-        auto digest = SHA256File(image->GetFileName());
+        auto digest = SHA256File(image.GetFileName());
 
-        stmt->Bind(1, image->GetFileName());
+        stmt->Bind(1, image.GetFileName());
         stmt->Bind(2, digest.data(), digest.size());
         stmt->Step();
 
@@ -157,15 +157,14 @@ int Context::SaveImage(const std::shared_ptr<Image>& image)
     return conn_->GetLastInsertRowID();
 }
 
-int Context::SaveImageSignature(const std::shared_ptr<Image>& image,
-                                int image_id)
+int Context::SaveImageSignature(const Image& image, int image_id)
 {
     try
     {
         auto stmt = conn_->Prepare("INSERT INTO signatures (image_id, "
                                    "compressed_signature) VALUES(?, ?)");
 
-        auto cvec = image->GetCvec();
+        auto cvec = image.GetCvec();
         auto compressed = cvec->Compress();
 
         stmt->Bind(1, image_id);
@@ -185,15 +184,14 @@ int Context::SaveImageSignature(const std::shared_ptr<Image>& image,
     return conn_->GetLastInsertRowID();
 }
 
-bool Context::SaveImageWords(const std::shared_ptr<Image>& image, int image_id,
-                             int signature_id)
+bool Context::SaveImageWords(const Image& image, int image_id, int signature_id)
 {
     (void)image_id;
     auto console = spdlog::get("console");
     auto stmt = conn_->Prepare(
         "INSERT INTO words (signature_id, pos_and_word) VALUES(?, ?)");
 
-    auto words = CompressWords(image->GetWords());
+    auto words = CompressWords(image.GetWords());
 
     for (auto word : words)
     {
@@ -267,5 +265,6 @@ std::string Context::SHA256File(const std::string& path) const
 
     delete[] buffer;
     SHA256_Final(reinterpret_cast<unsigned char*>(digest), &sha256);
-    return std::string(digest, sizeof digest);
+
+    return { digest, sizeof digest };
 }

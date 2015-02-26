@@ -59,10 +59,9 @@ void Application::Search(std::vector<std::string> parameters)
         try
         {
             console->info("Searching for images similar to '{}'", filename);
+            auto image = std::make_unique<OFN::Image>(context_, filename);
 
-            auto image = std::make_shared<OFN::Image>(context_, filename);
-
-            context_->Search(image);
+            context_->Search(*image);
         }
         catch (const Puzzle::RuntimeError& error)
         {
@@ -81,9 +80,9 @@ void Application::Commit(std::vector<std::string> parameters)
         {
             console->info("Comitting image '{}'", filename);
 
-            auto image = std::make_shared<OFN::Image>(context_, filename);
+            auto image = std::make_unique<OFN::Image>(context_, filename);
 
-            context_->Commit(image);
+            context_->Commit(*image);
         }
         catch (const Puzzle::RuntimeError& error)
         {
@@ -99,7 +98,7 @@ void Application::Process(std::vector<std::string> parameters)
 
     try
     {
-        auto image = std::make_shared<OFN::Image>(context_, filename);
+        auto image = std::make_unique<OFN::Image>(context_, filename);
     }
     catch (const Puzzle::RuntimeError& error)
     {

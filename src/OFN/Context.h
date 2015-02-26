@@ -68,32 +68,31 @@ public:
     /**
      * Commit a new image and its fingerprint to the database.
      */
-    void Commit(const std::shared_ptr<Image>& image);
+    void Commit(const Image& image);
 
     /**
      * Search for similar images in the database.
      */
-    void Search(const std::shared_ptr<Image>& image);
+    void Search(const Image& image);
 
     /**
      * @brief Save the image to the database.
      *
      * @returns The inserted row ID on success, -1 otherwise.
      */
-    int SaveImage(const std::shared_ptr<Image>& image);
+    int SaveImage(const Image& image);
 
     /**
      * @brief Save the image signature to the database.
      *
      * @returns The inserted row ID on success, -1 otherwise.
      */
-    int SaveImageSignature(const std::shared_ptr<Image>& image, int image_id);
+    int SaveImageSignature(const Image& image, int image_id);
 
     /**
      * @brief Save the image words compressed to the database.
      */
-    bool SaveImageWords(const std::shared_ptr<Image>& image, int image_id,
-                        int signature_id);
+    bool SaveImageWords(const Image& image, int image_id, int signature_id);
 
     /**
      * @brief Compress a list of words using PuzzleCompressedCvec.

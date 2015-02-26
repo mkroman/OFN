@@ -71,7 +71,7 @@ public:
      *
      * @returns the cvec.
      */
-    auto GetCvec() {
+    const Puzzle::CVec* GetCvec() const {
         return cvec_;
     }
 
