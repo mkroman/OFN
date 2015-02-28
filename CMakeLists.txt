@@ -38,11 +38,11 @@ set (OFN_DESCRIPTION "Image recognition tool to determine if an image has been s
 
 # Set source files
 set (ofn_SOURCE
+  src/OFN/Puzzle/CVec.cpp
+  src/OFN/Puzzle/CompressedCVec.cpp
   src/OFN/main.cpp
   src/OFN/Context.cpp
   src/OFN/Image.cpp
-  src/OFN/Puzzle/CVec.cpp
-  src/OFN/Puzzle/CompressedCVec.cpp
   src/OFN/SQLite3/Statement.cpp
 )
 

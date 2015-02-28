@@ -52,6 +52,16 @@ public:
     ~Image();
 
     /**
+     * Compare this image with a vector.
+     *
+     * @param cvec the vector to compare with
+     *
+     * @returns the normalized distance between this images vector and the input
+     * vector.
+     */
+    double Compare(const Puzzle::CVec& cvec) const;
+
+    /**
      * Get a list of words from the signature.
      */
     std::vector<std::string> GetWords() const;
